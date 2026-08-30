@@ -20,7 +20,6 @@
       "mcp__svelte",
       "mcp__cloudflare-docs",
       "mcp__playwright"
-
     ],
     "ask": [
       "mcp__playwright__browser_run_code_unsafe",
