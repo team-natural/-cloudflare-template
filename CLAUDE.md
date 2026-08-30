@@ -72,7 +72,15 @@ Note: `devcontainer.json`'s `portsAttributes` still keys its dev-server labels o
 
 Configured in `.mcp.json` and enabled in `.claude/settings.json`:
 
-- `context7` — remote HTTP server for up-to-date library/framework docs.
+Prefer the framework-specific server over `context7` when one covers the question — reach for
+`context7` for everything else rather than answering a library question from memory.
+
+- `astro-docs` / `svelte` / `cloudflare-docs` — official docs for this stack's three core pieces.
+  These are the first stop for Astro, Svelte and Workers/D1/R2/KV questions respectively.
+- `context7` — remote HTTP server for up-to-date docs on any *other* library/framework.
+- `playwright` — headless Chromium, used by the `design-review` skill. Screenshots default into
+  the gitignored `.playwright-mcp/`; don't pass an absolute `filename`, or the file lands
+  untracked in the repo root.
 - `context-mode` — local context-compression server, installed globally (in-container) by
   `setup.sh` and invoked directly by command name.
 - `semble` — local code search server, run via `uvx` (needs the `uv` install in the Dockerfile).
@@ -92,6 +100,68 @@ Both apps currently ship as minimal scaffolds (one placeholder page each, no aut
 each library was chosen, what's still `Open`) lives in `docs/3-development/01-architecture-rules.md`
 (DEV-01) — do not duplicate stack decisions here or in `docs/`; this section only describes what's
 already scaffolded in this repo.
+
+## Architecture
+
+Layer rule inside `apps/admin` (DEV-01 §5 carries the rationale; this is the enforceable form):
+
+```text
+Astro Page / API Route  →  Service  →  D1
+   (render + I/O only)     (business    (Drizzle
+                            logic)       queries)
+```
+
+- Pages and API routes never query D1 directly — they call a Service. The one exception is
+  `lib/server/db/client.ts` (`createDb`), which may be imported from outside `lib/server/`.
+- Svelte islands are UI only: they never import from `lib/server/`, they go through API routes.
+- `apps/public` and `apps/admin` never import each other; shared code goes in `packages/*`, and
+  `packages/*` never imports back from `apps/*`.
+- All of the above is machine-checked by `eslint-plugin-boundaries` in `eslint.config.js`, so
+  `pnpm lint` fails on a violation. Note `apps/admin/src/lib/server/` does not exist yet — it
+  appears when the project grows its first Service (DEV-05 §1 owns its internal layout).
+
+Cloudflare bindings are read with `import { env } from "cloudflare:workers"` — **not**
+`Astro.locals.runtime.env`, which Astro removed in v6 and which does not exist in the v7 used here.
+
+**Tailwind v4 is CSS-first — there is no `tailwind.config.js`.** Design tokens live in `@theme` /
+`@theme inline` blocks in the stylesheet itself: `apps/admin/src/styles/admin.css` carries the
+shadcn-svelte token layer, while `apps/public/src/styles/global.css` deliberately has none (plain
+Tailwind, no component library). Fix a token in the stylesheet, never per page.
+
+## D1 / R2 / KV binding rules
+
+One D1 database and one R2 bucket per project, shared by both Workers. Binding names are fixed:
+
+| Binding | Resource | `apps/public` | `apps/admin` |
+| --- | --- | --- | --- |
+| `DB` | D1 | yes | yes |
+| `BUCKET` | R2 | yes | yes |
+| `KV` | Workers KV | no | yes |
+
+(Each app also has its own `ASSETS` binding for its built static files — that one is per-Worker,
+not shared, and is part of the `@astrojs/cloudflare` setup rather than a project resource.)
+
+- **Create once, then copy the ids.** Run `wrangler d1 create` / `wrangler r2 bucket create` from
+  one app only and paste the generated `database_id` / `bucket_name` into the *other* app's
+  `wrangler.jsonc`. Both files ship with `replace-with-*` placeholders that must be replaced at
+  bootstrap — in the top-level config *and* in the `env.staging` / `env.production` blocks.
+- **Migrations belong to `apps/admin`.** `pnpm db:generate` writes SQL into
+  `packages/schema/migrations/`, and `wrangler d1 migrations apply` is run from `apps/admin` only —
+  never from `apps/public`, even though it shares the same database.
+- Never hand-write migration SQL and never edit anything under `packages/schema/migrations/`; it is
+  `drizzle-kit generate` output (use the `schema-build` skill).
+
+## shadcn-svelte
+
+Admin-only — `apps/public` gets plain Tailwind and no component library.
+
+- Run the CLI from inside `apps/admin`, where `components.json` lives:
+  `pnpm dlx shadcn-svelte@latest add <component>`.
+- The CLI emits tab-indented files, so **run `pnpm format` after every `add`/`update`** or the next
+  `pnpm check` fails on formatting.
+- Generated components under `apps/admin/src/lib/components/ui/` are yours to edit.
+- `.agents/skills/shadcn-svelte/` is vendor-managed — never hand-edit it. `.claude/skills/shadcn-svelte`
+  is a symlink to it, which is what makes Claude Code load it as a skill.
 
 ## Current state / commands
 

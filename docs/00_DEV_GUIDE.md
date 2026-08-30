@@ -110,7 +110,7 @@ git commit / git push                     → 人間がやる（AI は実行し�
 |  | docs 一式生成（BIZ → PRD → DEV） | 会話で依頼（§3-1 の順序表） | — |
 |  | レビュー・確定 | 人間（ステータスラベル運用） | — |
 | **基盤** | DEV-07 の物理テーブル設計 → Drizzle スキーマ生成 → `drizzle-kit generate` → `wrangler d1 migrations apply` | `schema-build` スキル（実装済み。DEV-07 → `packages/schema/src/schema.ts` → `pnpm db:generate`）+ 適用は人間（`apps/admin` からのみ実行） | — |
-|  | Service / API ルートの雛形一括生成（DEV-07/DEV-09 が既に確定しているリソース） | `scaffold` スキル（実装済み。Plop で Service / Zod バリデーション / API ルートを生成。`apps/admin` 配下、Astro ページは対象外） | — |
+|  | Service / API ルートの雛形一括生成（DEV-07/DEV-09 が既に確定しているリソース） | `scaffold` スキル（スキル本体のみ現存。Plop 一式・参照実装は案件 bootstrap 時に作成 — DEV-01 §1。Astro ページは対象外） | — |
 | **実装** | 管理画面の実装（shadcn-svelte 標準パターン） | `admin-design` | スキル |
 | （ページ単位で反復） | 公開側の実装（オリジナルデザイン 6 段チェーン） | `public-design` | スキル |
 |  | バックエンド（`scaffold` が生成した雛形の穴埋め・生成対象外の実装） | 人間 + AI に日本語で依頼（専用サブエージェントは未導入 — Open） | — |
@@ -140,7 +140,7 @@ DEV 文書群（DEV-07 物理DB設計 が実装の起点）
     ↓
 DEV-07 → Drizzle スキーマ生成 → drizzle-kit generate → migrations/ → wrangler d1 migrations apply
     ↓                                                     ← schema-build スキル（実装済み）
-Service / Zod バリデーション / API Route を Plop で雛形生成 ← scaffold スキル（実装済み。Astro ページは対象外）
+Service / Zod バリデーション / API Route を Plop で雛形生成 ← scaffold スキル（スキル本体のみ現存。Plop 一式は案件 bootstrap 時に作成。Astro ページは対象外）
     ↓
 ページ単位で実装（管理画面: admin-design / 公開側: public-design）
     ↓

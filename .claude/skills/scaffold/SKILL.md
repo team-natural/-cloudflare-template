@@ -10,6 +10,13 @@ implementation (`apps/admin/src/lib/server/services/posts.ts`, `apps/admin/src/p
 for a new resource, via the `resource` Plop generator (`apps/admin/plopfile.mjs`, templates in
 `apps/admin/plop-templates/resource/`). Run the generator from inside `apps/admin`.
 
+> **Not available in the bare template.** None of the machinery above ships with this template:
+> `plop` is not a dependency, there is no `plopfile.mjs` or `plop-templates/`, and neither the
+> reference implementation nor `apps/admin/src/lib/server/` exists yet. All of it is created
+> during project bootstrap, once the project has real tables and its first Service. Until then,
+> stop and tell the user this skill has nothing to run — do not hand-write files pretending to be
+> generator output, and do not invent the Service-layer conventions; DEV-05 §1 owns those.
+
 **Precondition**: the target table must already exist in `packages/schema/src/schema.ts` (run the
 `schema-build` skill first if it doesn't — scaffold reads the table, it doesn't create it).
 

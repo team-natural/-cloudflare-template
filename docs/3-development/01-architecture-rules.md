@@ -42,7 +42,7 @@ related-docs:
 | CSS | Tailwind CSS | v4（`@tailwindcss/vite` 経由、CSS-first。`@import "tailwindcss";` で開始）。`tailwind.config.js` は使わない |
 | Database | Cloudflare D1（SQLite 互換） | バインディング名は必ず `DB`。マイグレーションは Drizzle Kit 生成 SQL（`packages/schema/migrations/` + `wrangler d1 migrations apply`、`apps/admin` からのみ実行） |
 | ORM / スキーマ管理 | Drizzle（`drizzle-orm` + `drizzle-kit`、SQLite/D1 dialect） | スキーマ定義の正本は DEV-07（Markdown テーブル定義）。`schema-build` スキル（実装済み）が DEV-07 の記述から Drizzle スキーマ（TS、`packages/schema/src/schema.ts`）を生成し、そこから `drizzle-kit generate`（`pnpm db:generate`）で migration SQL（`packages/schema/migrations/`）を生成する 2 段階パイプライン。`packages/schema` は `apps/public`/`apps/admin` 双方から参照される共有パッケージ。型は Drizzle が `$inferSelect` で自動導出するため型定義ファイルの別生成は不要（`apps/admin` が `packages/schema` から直接 import する。別パッケージへの再エクスポートは行わない — DEV-01 §1「リポジトリ構成」参照） |
-| スケルトン生成（開発時のみ） | Plop | `scaffold` スキル（実装済み — `.claude/skills/scaffold/`、`apps/admin/plopfile.mjs`）が DEV-07（テーブル定義）・DEV-09（状態遷移、採用時）を読み、`apps/admin` に Service・Zod バリデーション・API ルートの雛形を一括生成する。スコープはバックエンド層のみ — Astro ページはデザイン判断を伴うため対象外（`admin-design`/`public-design` が担当）。ビルド物には含めない devDependency |
+| スケルトン生成（開発時のみ） | Plop | `scaffold` スキル（`.claude/skills/scaffold/`）が DEV-07（テーブル定義）・DEV-09（状態遷移、採用時）を読み、`apps/admin` に Service・Zod バリデーション・API ルートの雛形を一括生成する。**ただし本テンプレートに含まれるのはスキル本体のみで、`plop`（devDependency）・`apps/admin/plopfile.mjs`・`apps/admin/plop-templates/` と雛形の元になる参照実装（`apps/admin/src/lib/server/`）は未整備 — 案件 bootstrap 時に作成する。**スコープはバックエンド層のみ — Astro ページはデザイン判断を伴うため対象外（`admin-design`/`public-design` が担当）。ビルド物には含めない devDependency |
 | ファイルストレージ | Cloudflare R2 | バインディング名は必ず `BUCKET` |
 | Cache / Queue | Cloudflare KV 採用・Queues 不採用（`Confirmed`） | KV は認証エンドポイントの失敗回数カウンタ（DEV-02 §7）とメンテナンスモードフラグ（OPS-02 §3-3/§3-5)用。Queues はコンテンツ主体サイトには過剰なため不採用（§3）— 必要が生じたら新規 GOV-01 決定で追加。Session は本書 §2「API 提供（認証）」で決定済み（D1 ベース） |
 | Mail | Resend（`resend` npm パッケージ、fetch ベースの公式 SDK） | プロジェクト開始時に導入。Node 専用 SDK は Workers で動かないことがあるため、fetch ベースで動作するものを選ぶ |
@@ -214,7 +214,7 @@ Request → Astro API Route (apps/admin/src/pages/api/**/*.ts) → Service → D
 - 現存: `.claude/skills/`（`public-design` / `admin-design` / `shadcn-svelte` / `fixing-accessibility` 等、実装時のワークフロー）
 - 現存: `.agents/skills/shadcn-svelte/rules/`（コンポーネント構成・フォーム・スタイリング・アイコンの規約。ベンダー管理のため直接編集しない）
 - 実装済み: `schema-build` スキル（DEV-07 → Drizzle スキーマ → migration の生成、`.claude/skills/schema-build/`）
-- 実装済み: `scaffold` スキル（DEV-07/DEV-09 → Service/Zod バリデーション/API ルート雛形の生成、`.claude/skills/scaffold/`。Astro ページ生成は対象外）
+- スキル本体のみ現存（Plop 一式・参照実装は未整備。案件 bootstrap 時に作成 — 本書 §1 参照）: `scaffold` スキル（DEV-07/DEV-09 → Service/Zod バリデーション/API ルート雛形の生成、`.claude/skills/scaffold/`。Astro ページ生成は対象外）
 
 ---
 

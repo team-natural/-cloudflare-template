@@ -23,12 +23,14 @@ styling/icon rules under `.agents/skills/shadcn-svelte/rules/`. While implementi
   missing. Per CLAUDE.md: never hand-edit `.agents/skills/shadcn-svelte/`, and run
   `pnpm run format` after `add`/`update` since the CLI's own output uses tabs.
 - Look at the most similar existing admin screen for established composition style before
-  inventing a new layout — currently `apps/admin/src/pages/login.astro` +
-  `apps/admin/src/lib/components/login-form.svelte` (Card/Field/Button composition, `cn()` for
-  conditional classes, the `sr-only` heading + visible `Card.Title` pattern, the
-  `motion-safe:animate-in` entrance treatment). As more admin screens land, treat the most
-  recent screen of the same kind (dashboard/list/form/settings) as the reference instead —
-  this skill doesn't hard-code per-type layouts, because none are established yet.
+  inventing a new layout — currently the login screen (ADM-00): `apps/admin/src/pages/index.astro`
+  + `apps/admin/src/lib/components/login-form.svelte`. What it establishes: `Card.Root` >
+  `Card.Header`/`Card.Content`/`Card.Footer` composition, `Label` + `Input` pairs inside a
+  `grid gap-2`, and Svelte 5 runes (`$state`) for local form state. It is a deliberately minimal
+  scaffold — UI only, not wired to any API — so treat it as a composition reference, not as a
+  finished screen. As more admin screens land, treat the most recent screen of the same kind
+  (dashboard/list/form/settings) as the reference instead — this skill doesn't hard-code
+  per-type layouts, because none are established yet.
 - Wrap the page in `apps/admin/src/layouts/Layout.astro` (which imports
   `apps/admin/src/styles/admin.css`) — never `apps/public`'s layout or `global.css`.
 - Styling stays within `admin.css`'s CSS-variable tokens (`--primary`, `--muted-foreground`,
@@ -54,9 +56,10 @@ Sweep the screen you just built:
 
 Invoke the `fixing-accessibility` skill and audit/fix the screen. shadcn-svelte's primitives
 (built on `bits-ui`) already cover most primitive-level behavior (focus trap, ARIA roles) —
-focus the audit on what the page composes: heading order (see the `sr-only` `<h1>` pattern in
-`login.astro`), form error associations, icon-only buttons, table semantics, focus after
-dialog/sheet close.
+focus the audit on what the page composes: heading order (the login screen has no `<h1>` at all
+today — give every screen you build a real one, visible or `sr-only`, rather than copying that
+gap), form error associations, icon-only buttons, table semantics, focus after dialog/sheet
+close.
 
 ## Step 4 — Verify in a real browser: `design-review`
 

@@ -35,10 +35,14 @@ so it stays in sync with §3/§4 (DEV-07's own stated rule).
 
 ## Step 2 — Update `packages/schema/src/schema.ts`
 
-Translate the DEV-07 column table to Drizzle's `sqlite-core` API, matching the style already in
-the file (helper `createdAt()`, `snake_case` DB names via the first argument, `camelCase` TS
-property names, indexes/unique constraints returned from the table's extra-config callback as an
-array — `(table) => [index(...), uniqueIndex(...)]`).
+Translate the DEV-07 column table to Drizzle's `sqlite-core` API: `snake_case` DB names via the
+first argument, `camelCase` TS property names, indexes/unique constraints returned from the
+table's extra-config callback as an array — `(table) => [index(...), uniqueIndex(...)]`.
+
+`schema.ts` currently holds only the placeholder `adminUsers` table (see the TEMPLATE comment at
+the top of the file), so there is no established house style beyond the above yet — the first
+real table you add sets it. Factor out a shared `createdAt()` helper once a second table needs
+the same `strftime(...)` default, rather than repeating the expression.
 
 | DEV-07 | Drizzle |
 | --- | --- |
