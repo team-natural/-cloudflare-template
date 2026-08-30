@@ -81,9 +81,10 @@ Configured in `.mcp.json` and enabled in `.claude/settings.json`:
 
 This is a pnpm workspace (`pnpm-workspace.yaml`) orchestrated by Turborepo (`turbo.json`):
 
-- `apps/public` — public site (Astro SSR, plain Tailwind). Deploys as its own Cloudflare Worker.
-- `apps/admin` — admin CMS (Astro SSR + Svelte islands + Tailwind). Deploys as its own Cloudflare
-  Worker. Depends on `packages/schema` via `workspace:*`.
+- `apps/public` — public site (Astro SSR + Svelte islands + plain Tailwind, no component library).
+  Deploys as its own Cloudflare Worker.
+- `apps/admin` — admin CMS (Astro SSR + Svelte islands + Tailwind + shadcn-svelte). Deploys as its
+  own Cloudflare Worker. Depends on `packages/schema` via `workspace:*`.
 - `packages/schema` — shared Drizzle schema/migrations, imported by `apps/admin` as `@app/schema`.
 
 Both apps currently ship as minimal scaffolds (one placeholder page each, no auth/login wired up).
@@ -95,6 +96,9 @@ already scaffolded in this repo.
 ## Current state / commands
 
 Root `package.json` scripts fan out to every workspace package via Turborepo:
-`pnpm dev` / `pnpm build` / `pnpm check` / `pnpm typecheck` / `pnpm lint` / `pnpm db:generate`.
+`pnpm dev` / `pnpm build` / `pnpm check` / `pnpm typecheck` / `pnpm db:generate`.
 Check each package's own `package.json` before assuming a given script exists there — the scaffolds
-only define the scripts each app actually needs so far (see "Monorepo layout" above).
+only define the scripts each app actually needs so far (see "Monorepo layout" above). There is no
+`pnpm lint` yet — no lint tool (ESLint/Biome/etc.) is wired up in any workspace package; add one to
+`apps/public`/`apps/admin` (and a `"lint": { "dependsOn": ["^lint"] }` task in `turbo.json`) before
+introducing that script.

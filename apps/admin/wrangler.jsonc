@@ -1,8 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  "main": "@astrojs/cloudflare/entrypoints/server",
   "name": "admin",
   "compatibility_date": "2026-08-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "observability": {
+    "enabled": true
+  },
 
   // Shared with apps/public — copy the same database_id / bucket_name that were
   // generated when creating them from apps/public/wrangler.jsonc (DEV-08 §1).

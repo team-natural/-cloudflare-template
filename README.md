@@ -41,9 +41,9 @@ When creating a new project from this template, first update the following:
 docker compose -f .devcontainer/docker-compose.yml up -d
 ```
 
-Once started, the container listens on `APP_PORT_DEV` (default `5173`) and that same port is
-published on the host, bound to `127.0.0.1` (handled by docker compose; change `APP_PORT_DEV` per
-project to avoid collisions).
+Once started, the container listens on `APP_PORT_DEV_PUBLIC` / `APP_PORT_DEV_ADMIN` (defaults
+`5173` / `5174`) and those same ports are published on the host, bound to `127.0.0.1` (handled by
+docker compose; change them per project to avoid collisions).
 
 ## Using Claude Code
 
