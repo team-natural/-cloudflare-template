@@ -1,0 +1,10 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "headless": true,
+      "args": ["--no-sandbox"]
+    }
+  },
+  "outputDir": "/workspace/.playwright-mcp"
+}

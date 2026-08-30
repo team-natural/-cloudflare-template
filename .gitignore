@@ -29,5 +29,8 @@ build/
 # --- Claude Code ---
 settings.local.json
 
+# --- Playwright ---
+.playwright-mcp/
+
 # --- Others ---
 *.log
