@@ -7,7 +7,6 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check && svelte-check --tsconfig ./tsconfig.json",
     "typecheck": "wrangler types && astro check && svelte-check --tsconfig ./tsconfig.json",
     "deploy": "wrangler deploy"
   },

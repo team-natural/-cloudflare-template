@@ -8,6 +8,8 @@ import boundaries from "eslint-plugin-boundaries";
 import eslintPluginSvelte from "eslint-plugin-svelte";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import adminSvelteConfig from "./apps/admin/svelte.config.js";
+import publicSvelteConfig from "./apps/public/svelte.config.js";
 
 export default tseslint.config(
   {
@@ -22,10 +24,18 @@ export default tseslint.config(
       globals: { ...globals.browser, ...globals.node },
     },
   },
+  // Each app has its own svelte.config.js; passing it to the parser is what makes
+  // preprocessor-aware rules (svelte/valid-compile etc.) accurate.
   {
-    files: ["**/*.svelte"],
+    files: ["apps/admin/**/*.svelte"],
     languageOptions: {
-      parserOptions: { parser: tseslint.parser },
+      parserOptions: { parser: tseslint.parser, svelteConfig: adminSvelteConfig },
+    },
+  },
+  {
+    files: ["apps/public/**/*.svelte"],
+    languageOptions: {
+      parserOptions: { parser: tseslint.parser, svelteConfig: publicSvelteConfig },
     },
   },
   {

@@ -99,10 +99,12 @@ Root `package.json` scripts fan out to every workspace package via Turborepo:
 `pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm db:generate`. `pnpm lint` (`eslint .`) and
 `pnpm format` / `pnpm format:check` (`prettier`) run once at the repo root — not fanned out per
 package — since ESLint's layer-boundary rules and Prettier's config are scoped by path pattern in
-a single root `eslint.config.js` / `.prettierrc.json` (DEV-01 §1). `pnpm check` runs
-`format:check` + `lint` + `turbo run check` (per-app `astro check`/`svelte-check`) together.
-Check each package's own `package.json` before assuming a given script exists there — the scaffolds
-only define the scripts each app actually needs so far (see "Monorepo layout" above).
+a single root `eslint.config.js` / `.prettierrc` (DEV-01 §1). `pnpm check` is the pre-commit/PR
+gate and runs `format:check` + `lint` + `turbo run typecheck` together; there is deliberately no
+separate per-app `check` script, since it would just be `typecheck` minus `wrangler types` (and
+`worker-configuration.d.ts` is gitignored, so the `wrangler types` step is required on a fresh
+clone). Check each package's own `package.json` before assuming a given script exists there — the
+scaffolds only define the scripts each app actually needs so far (see "Monorepo layout" above).
 
 A `PostToolUse` hook (`.claude/hooks/format-and-check.sh`, wired in `.claude/settings.json`) runs
 Prettier → `eslint --fix` → `pnpm typecheck` automatically after every Edit/Write to a file this
