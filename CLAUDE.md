@@ -96,9 +96,14 @@ already scaffolded in this repo.
 ## Current state / commands
 
 Root `package.json` scripts fan out to every workspace package via Turborepo:
-`pnpm dev` / `pnpm build` / `pnpm check` / `pnpm typecheck` / `pnpm db:generate`.
+`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm db:generate`. `pnpm lint` (`eslint .`) and
+`pnpm format` / `pnpm format:check` (`prettier`) run once at the repo root — not fanned out per
+package — since ESLint's layer-boundary rules and Prettier's config are scoped by path pattern in
+a single root `eslint.config.js` / `.prettierrc.json` (DEV-01 §1). `pnpm check` runs
+`format:check` + `lint` + `turbo run check` (per-app `astro check`/`svelte-check`) together.
 Check each package's own `package.json` before assuming a given script exists there — the scaffolds
-only define the scripts each app actually needs so far (see "Monorepo layout" above). There is no
-`pnpm lint` yet — no lint tool (ESLint/Biome/etc.) is wired up in any workspace package; add one to
-`apps/public`/`apps/admin` (and a `"lint": { "dependsOn": ["^lint"] }` task in `turbo.json`) before
-introducing that script.
+only define the scripts each app actually needs so far (see "Monorepo layout" above).
+
+A `PostToolUse` hook (`.claude/hooks/format-and-check.sh`, wired in `.claude/settings.json`) runs
+Prettier → `eslint --fix` → `pnpm typecheck` automatically after every Edit/Write to a file this
+toolchain understands (`*.md` is intentionally excluded — Prettier isn't run against docs here).

@@ -1,0 +1,14 @@
+.agents/
+.astro/
+.claude/
+.playwright-mcp/
+.turbo/
+.wrangler/
+*.md
+dist/
+docs/
+migrations/
+node_modules/
+plop-templates/
+pnpm-lock.yaml
+worker-configuration.d.ts
