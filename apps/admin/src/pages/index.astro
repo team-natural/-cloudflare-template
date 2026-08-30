@@ -1,14 +1,15 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import LoginForm from "../lib/components/login-form.svelte";
 ---
 
-<Layout title="apps/admin">
-  <main>
+<Layout title="apps/admin — ログイン">
+  <main class="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
     <img src="/logo.svg" alt="ロゴ" width="211" height="55" />
-    <h1>apps/admin（骨組みのみ）</h1>
-    <p>
-      管理画面の実ページ・認証は未実装。画面一覧は docs/2-product/04-ui-ux-design.md §3-2
-      （ADM-00〜）、ログイン画面の実装方針は docs/3-development/06-frontend-guide.md §4-4 を参照。
+    <LoginForm client:load />
+    <p class="max-w-sm text-center text-sm text-muted-foreground">
+      簡易的な画面（ADM-00、UI のみで API 未結線）。詳細は
+      docs/2-product/04-ui-ux-design.md §3-2、docs/3-development/06-frontend-guide.md §4-4 を参照。
     </p>
   </main>
 </Layout>

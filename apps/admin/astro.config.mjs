@@ -1,3 +1,4 @@
+import path from "node:path";
 import cloudflare from "@astrojs/cloudflare";
 import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
@@ -9,6 +10,11 @@ export default defineConfig({
   integrations: [svelte()],
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        $lib: path.resolve("./src/lib"),
+      },
+    },
   },
   server: {
     host: true,
