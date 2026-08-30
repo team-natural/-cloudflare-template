@@ -10,7 +10,7 @@
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    // TODO: POST /api/v1/auth/login への結線（DEV-06 §4-4）。現状は UI のみ。
+    // TODO: wire up to POST /api/v1/auth/login (DEV-06 §4-4). UI only for now.
     submitting = true;
   }
 </script>
