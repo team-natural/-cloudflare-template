@@ -4,7 +4,7 @@ title: バックエンド実装ガイド
 phase: 3
 status: draft-ai
 owner: Tech Lead
-last-updated: 2026-08-18
+last-updated: 2026-08-30
 related-docs:
   - DEV-01: 技術スタック決定書・アーキテクチャ原則
   - DEV-04: API 仕様
@@ -42,7 +42,9 @@ related-docs:
 apps/admin/src/
 ├── pages/
 │   ├── api/v1/**/*.ts               # API Route（入出力ハンドリングのみ。/api/v1/ でバージョニング — DEV-04 §1）
-│   └── admin/**/*.astro             # 管理画面ページ（src/layouts/Layout.astro）
+│   └── **/*.astro                   # 管理画面ページ（src/layouts/Layout.astro）。apps/admin は
+│                                     #   サブドメインで丸ごと管理画面のため URL に /admin 接頭辞は
+│                                     #   付けない（DEV-01 §1、DEV-06 §1・§4-4）
 ├── lib/
 │   ├── components/                  # Svelte island + shadcn-svelte（$lib エイリアス）
 │   ├── server/                      # 確定済み。参照実装: apps/admin/src/lib/server/services/posts.ts 等

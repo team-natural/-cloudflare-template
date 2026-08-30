@@ -4,7 +4,7 @@ title: UI/UX 設計
 phase: 2
 status: draft-ai
 owner: PdM
-last-updated: 2026-08-18
+last-updated: 2026-08-30
 related-docs:
   - PRD-03: 機能要件との接続
   - DEV-06: フロントエンド実装ガイド
@@ -163,7 +163,7 @@ flowchart TD
 | ADM-10 | 会員一覧（参照専用・**標準外**。デフォルトでは実装しない — 下記注記参照） | サポート対応時の会員情報・注文履歴の参照 | admin | F-07-04, F-07-05（参照のみ） |
 <!-- SAMPLE END -->
 
-> ADM-00（ログイン）の画面例は既存の `apps/admin/src/pages/login.astro` + `apps/admin/src/lib/components/login-form.svelte`（DEV-06 §4-4）。**UI のみで API に結線されていない**ため、ADM-00 は未完成として扱う（バックエンドは実装済み。残作業は DEV-06 §4-4 参照）。ADM-09 は軽量 EC（FG-05）を採用しない場合は削除する。
+> ADM-00（ログイン）の画面例は既存の `apps/admin/src/pages/index.astro`（`/` 自体がログイン画面。`/login` への分離は行わない）+ `apps/admin/src/lib/components/login-form.svelte`（DEV-06 §4-4）。**UI のみで API に結線されていない**ため、ADM-00 は未完成として扱う（バックエンドも未実装。残作業は DEV-06 §4-4 参照）。ADM-09 は軽量 EC（FG-05）を採用しない場合は削除する。
 
 > **ADM-10 は本テンプレートの標準画面ではない（デフォルトでは実装しない、任意追加）。** マイページ機能（FG-07）採用時、サポート担当が会員からの問い合わせ対応で登録情報や注文履歴（Order 採用時）を参照する必要がある場合にのみ追加を検討する。参照専用（一覧・詳細の表示のみ）とし、Member の新規作成・編集・削除・状態変更・ロール付与等は持たせない — Member は AdminUser と完全に別系統のアカウントであり（PRD-01 §1-2）、AdminUser 側に会員の管理機能（変更権限）を持たせると意図的な分離方針に反するため。追加しない場合、Member はマイページ（SCR-09）でのみ自身の情報を確認・編集する。
 

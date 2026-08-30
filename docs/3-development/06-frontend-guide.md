@@ -4,7 +4,7 @@ title: フロントエンド実装ガイド
 phase: 3
 status: draft-ai
 owner: Tech Lead
-last-updated: 2026-08-18
+last-updated: 2026-08-30
 related-docs:
   - DEV-01: 技術スタック決定書・アーキテクチャ原則
   - DEV-04: API 仕様
@@ -48,10 +48,13 @@ apps/public/src/
     └── Layout.astro             # 公開画面の HTML 骨格・<head>・global.css
 
 apps/admin/src/
-├── pages/
-│   └── admin/                   # 管理画面（admin / editor 用。src/layouts/Layout.astro を使用）
-│       ├── login.astro
-│       └── （記事/固定ページ/メディア/お問い合わせ/管理者/設定 等 — PRD-04 §3-2、Assumed）
+├── pages/                        # `/admin` 等の接頭辞は付けない。apps/admin はサブドメイン
+│   │                             # （例: admin.example.com）で丸ごと管理画面としてデプロイする
+│   │                             # ため、URL に admin を含める必要がない（DEV-01 §1）
+│   ├── index.astro              # ログイン（ADM-00。Confirmed — `/` 自体をログイン画面とし、
+│   │                             # `/login` への分離は行わない。§4-4 参照）
+│   └── （dashboard.astro / posts/ 等 — ADM-01〜、PRD-04 §3-2、Assumed。admin / editor 用。
+│         src/layouts/Layout.astro を使用）
 ├── lib/
 │   ├── components/
 │   │   ├── ui/                  # shadcn-svelte 生成コンポーネント（DEV-01 §1。編集してよい）
@@ -143,11 +146,15 @@ PRD-04 §4 の標準構成に対応する。管理画面は shadcn-svelte のプ
 - バリデーションエラーは項目ごとにインライン表示（`FieldError` 相当）。保存中はスピナー等で
   多重送信を防止。
 - 削除等の危険操作は視覚的に区別し（警告色 + 枠）、確認ダイアログを必須とする。
-- 参考実装: `apps/admin/src/pages/login.astro` + `apps/admin/src/lib/components/login-form.svelte`（Card +
-  FieldGroup + Field の組み合わせ）。**これはコンポーネント構成の見本であり、UI のみ**（送信ハンドラを持たない）。
-  バックエンド側（`POST /api/v1/auth/login`、セッション発行、ロックアウト）は実装済みなので、案件側の作業は
-  ①フォームから API への結線 ②ログイン後の遷移先＝管理画面ランディングの設計 の 2 点。現状 `/` は
-  `/login` への無条件リダイレクトのため、遷移先を決めずに結線するとループする。
+- 参考実装: `apps/admin/src/pages/index.astro` + `apps/admin/src/lib/components/login-form.svelte`（Card +
+  Input + Label + Button の組み合わせ）。**これはコンポーネント構成の見本であり、UI のみ**（送信ハンドラは
+  `preventDefault` のみで API に結線されていない）。本テンプレートの時点ではバックエンド側
+  （`POST /api/v1/auth/login`、セッション発行、ロックアウト）も未実装（DEV-05 参照）。案件側の作業は
+  ①バックエンドの実装 ②フォームから API への結線 ③ログイン後の遷移先＝管理画面ランディングの設計 の
+  3 点。`/` 自体がログイン画面であり `/login` への分離は行わないため、ログイン成功後は明示的に別ルート
+  （例: `/dashboard`）へ遷移させること（`/` への遷移は無条件にログイン画面へ戻るためループする）。
+  `apps/admin` はサブドメイン（例: admin.example.com）で丸ごと管理画面としてデプロイするため、
+  遷移先の URL に `/admin` のような接頭辞は付けない（§1 参照）。
 
 ### 4-5. 設定画面
 

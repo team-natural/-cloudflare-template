@@ -4,7 +4,7 @@ title: 技術スタック決定書・アーキテクチャ原則
 phase: 3
 status: draft-ai
 owner: Tech Lead
-last-updated: 2026-08-18
+last-updated: 2026-08-30
 related-docs:
   - PRD-02: システム構成
   - PRD-05: AI 機能（任意）
@@ -33,7 +33,7 @@ related-docs:
 | Layer | 決定 | Version / 備考 |
 | --- | --- | --- |
 | Infra | **Cloudflare Workers** | ホスティング・デプロイ・オートスケールすべて。`astro build` の出力自体が Worker になる（`@astrojs/cloudflare` アダプタ）。`./dist` は `ASSETS` バインディング経由で配信 |
-| リポジトリ構成 | 1 リポジトリ内の pnpm workspaces + Turborepo モノレポ（`Confirmed` — GOV-01 D-001） | `apps/public`（公開サイト）・`apps/admin`（管理 CMS）を独立した Cloudflare Worker として別々にデプロイし、`packages/schema`（Drizzle スキーマ + migrations）を両者が参照する。2 リポジトリ構成（公開サイト用・管理サイト用）から移行した経緯は GOV-01 D-001 参照。`packages/config`（ESLint/TS の共有設定）・`packages/ui`（共有コンポーネント）・`packages/types`（schema からの型再エクスポート専用パッケージ）は検討の上で見送り：ESLint のレイヤー境界ルールはパスパターンでアプリごとにスコープできるためルート 1 ファイルの `eslint.config.js` で足り、TypeScript も各アプリが外部共有 config（`astro/tsconfigs/strict`）を `extends` して重いオプションを共有済みで、アプリ固有の差分（`include`/`exclude`・`paths`・`types`）を各 `tsconfig.json` に数行書くだけで済むため現状の 2 アプリ規模では共有パッケージ化の利得が間接参照コストを上回らず（アプリが 3 つ以上に増える・共有設定が数行を超える・ドリフトが実際に発生する、のいずれかが起きた時点で `packages/config` 導入を再検討する）、`packages/ui` は public 側にコンポーネントライブラリを持たない方針（本表の「UI コンポーネント（公開画面）」参照）・shadcn-svelte の `components.json` が 1 アプリのスタイルシートと 1:1 対応する設計のため共有すべき実体がなく、`packages/types` は実際の利用者（`apps/admin` 以外の参照元）が出てくるまでは `packages/schema` の `$inferSelect` を直接使えば足りるため作らない |
+| リポジトリ構成 | 1 リポジトリ内の pnpm workspaces + Turborepo モノレポ（`Confirmed` — GOV-01 D-001） | `apps/public`（公開サイト）・`apps/admin`（管理 CMS）を独立した Cloudflare Worker として別々にデプロイし、`packages/schema`（Drizzle スキーマ + migrations）を両者が参照する。`apps/admin` は専用サブドメイン（例: admin.example.com）に割り当て、アプリ丸ごとが管理画面となるため、`apps/admin` 内のページ URL に `/admin` のような接頭辞は付けない（`Confirmed`。DEV-06 §1・§4-4 参照）。2 リポジトリ構成（公開サイト用・管理サイト用）から移行した経緯は GOV-01 D-001 参照。`packages/config`（ESLint/TS の共有設定）・`packages/ui`（共有コンポーネント）・`packages/types`（schema からの型再エクスポート専用パッケージ）は検討の上で見送り：ESLint のレイヤー境界ルールはパスパターンでアプリごとにスコープできるためルート 1 ファイルの `eslint.config.js` で足り、TypeScript も各アプリが外部共有 config（`astro/tsconfigs/strict`）を `extends` して重いオプションを共有済みで、アプリ固有の差分（`include`/`exclude`・`paths`・`types`）を各 `tsconfig.json` に数行書くだけで済むため現状の 2 アプリ規模では共有パッケージ化の利得が間接参照コストを上回らず（アプリが 3 つ以上に増える・共有設定が数行を超える・ドリフトが実際に発生する、のいずれかが起きた時点で `packages/config` 導入を再検討する）、`packages/ui` は public 側にコンポーネントライブラリを持たない方針（本表の「UI コンポーネント（公開画面）」参照）・shadcn-svelte の `components.json` が 1 アプリのスタイルシートと 1:1 対応する設計のため共有すべき実体がなく、`packages/types` は実際の利用者（`apps/admin` 以外の参照元）が出てくるまでは `packages/schema` の `$inferSelect` を直接使えば足りるため作らない |
 | 環境分離（staging/production） | `wrangler.jsonc` の environments 機能（`Confirmed`） | `apps/public`/`apps/admin` それぞれの `wrangler.jsonc` 内の `env.staging` / `env.production` で分離し、D1/R2/KV は環境ごとに別インスタンスを定義する。staging 環境は用意する（OPS-02 §3-1 のマイグレーション dry-run 前提）。プロジェクト丸ごと複製方式は不採用。詳細は DEV-08 §2 |
 | Backend / Frontend | Astro | v7（latest） / `output: 'server'`（SSR 専用、SSG は対象外） |
 | インタラクティブ UI | Svelte | v5（runes 構文：`$state` 等）。Astro ページに `client:*` ディレクティブでアイランドとして埋め込む。ページ全体の SPA 化はしない |
