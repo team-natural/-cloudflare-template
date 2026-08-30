@@ -17,14 +17,14 @@ When creating a new project from this template, first update the following:
    - `COMPOSE_PROJECT_NAME`: change to a name unique to the project (docker compose uses it to
      prefix container, volume, and network names, keeping each project's containers and its
      Claude Code config volume isolated from other projects)
-   - `APP_PORT_DEV`: change so it doesn't collide with other projects' ports (used for both the
-     container-side and host-side port)
+   - `APP_PORT_DEV_PUBLIC` / `APP_PORT_DEV_ADMIN`: change so they don't collide with other
+     projects' ports (used for both the container-side and host-side port)
 2. Update `name` in `.devcontainer/devcontainer.json` to match the project name, if needed
-   - If `APP_PORT_DEV` was changed from the default `5173`, also update the port key under
+   - If the ports were changed from the defaults `5173`/`5174`, also update the port keys under
      `portsAttributes` in `.devcontainer/devcontainer.json` to match
 3. Add any required OS packages to `.devcontainer/Dockerfile`
-4. Add real dependencies and scripts (build / lint / test, etc.) to `package.json`
-   - Currently this is just a skeleton with no dependencies or scripts
+4. Replace the `apps/public`/`apps/admin` scaffold pages with the real site/CMS, and fill in
+   `packages/schema` with the real Drizzle tables (see `docs/3-development/07-database-schema.md`)
 
 ## Starting the container
 
@@ -32,7 +32,8 @@ When creating a new project from this template, first update the following:
 
 1. Open the repository in VS Code
 2. Run `Dev Containers: Reopen in Container` from the command palette
-3. On first startup, `.devcontainer/setup.sh` (`npm install`) runs automatically
+3. On first startup, `.devcontainer/setup.sh` (`pnpm install`, across all workspace packages)
+   runs automatically
 
 ### CLI
 

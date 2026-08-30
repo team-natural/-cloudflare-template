@@ -19,6 +19,16 @@ yarn-debug.log*
 yarn-error.log*
 dist/
 build/
+.astro/
+.turbo/
+
+# --- Cloudflare / Wrangler ---
+.wrangler/
+worker-configuration.d.ts
+
+# --- pnpm / Turborepo ---
+.pnpm-store/
+.turbo/
 
 # --- Secrets / local env ---
 .dev.vars

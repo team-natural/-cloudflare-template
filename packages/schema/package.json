@@ -1,0 +1,17 @@
+{
+  "name": "@app/schema",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "main": "./src/schema.ts",
+  "types": "./src/schema.ts",
+  "scripts": {
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.36.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.28.0"
+  }
+}

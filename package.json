@@ -1,5 +1,18 @@
 {
   "name": "app",
+  "private": true,
   "type": "module",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check": "turbo run check",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "db:generate": "turbo run db:generate --filter=@app/schema"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  }
 }
