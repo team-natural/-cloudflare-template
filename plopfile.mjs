@@ -147,6 +147,13 @@ export default function (plop) {
       },
       {
         type: "list",
+        name: "readRole",
+        message: "Role required to READ (list/detail). DEV-02 §2-3 marks Inquiry/AdminUser/settings/audit-log as editor:✕:",
+        choices: ["editor", "admin"],
+        default: "editor",
+      },
+      {
+        type: "list",
         name: "writeRole",
         message: "Role required for create/update/delete (DEV-02 §2-3):",
         choices: ["editor", "admin"],

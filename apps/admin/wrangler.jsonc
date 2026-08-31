@@ -12,6 +12,17 @@
     "enabled": true,
   },
 
+  // `vars` is a NON-INHERITABLE wrangler key: a named environment does not pick up this block,
+  // so every value here must be repeated in each env.* below (same trap as `migrations_dir`).
+  // Leaving one out makes the auth lockout fail open — see the Number.isFinite guards in
+  // lib/server/auth/lockout.ts and session.ts.
+  "vars": {
+    "SESSION_TTL_DAYS": "30",
+    // Auth lockout (DEV-02 §7): N failures within a minute lock the IP/account out for M minutes
+    "AUTH_LOCKOUT_MAX_ATTEMPTS": "5",
+    "AUTH_LOCKOUT_MINUTES": "15",
+  },
+
   // Shared with apps/public — copy the same database_id / bucket_name that were
   // generated when creating them from apps/public/wrangler.jsonc (DEV-08 §1).
   //
@@ -41,6 +52,12 @@
 
   "env": {
     "staging": {
+      "vars": {
+        "APP_ENV": "staging",
+        "SESSION_TTL_DAYS": "30",
+        "AUTH_LOCKOUT_MAX_ATTEMPTS": "5",
+        "AUTH_LOCKOUT_MINUTES": "15",
+      },
       "d1_databases": [
         {
           "binding": "DB",
@@ -53,6 +70,12 @@
       "kv_namespaces": [{ "binding": "KV", "id": "replace-with-kv-namespace-id-staging" }],
     },
     "production": {
+      "vars": {
+        "APP_ENV": "production",
+        "SESSION_TTL_DAYS": "30",
+        "AUTH_LOCKOUT_MAX_ATTEMPTS": "5",
+        "AUTH_LOCKOUT_MINUTES": "15",
+      },
       "d1_databases": [
         {
           "binding": "DB",

@@ -12,6 +12,12 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "test:e2e": {
+      "cache": false
+    },
     "db:generate": {
       "cache": false
     }

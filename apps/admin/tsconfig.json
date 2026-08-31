@@ -2,9 +2,13 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "baseUrl": ".",
+    // Ambient types for the `cloudflare:test` module used by tests/ (Workers Vitest integration).
+    "types": ["@cloudflare/vitest-plugin/types"],
     "paths": {
       "$lib": ["./src/lib"],
       "$lib/*": ["./src/lib/*"]
     }
-  }
+  },
+  "include": [".astro/types.d.ts", "src/**/*", "tests/**/*", "worker-configuration.d.ts"],
+  "exclude": ["dist", "node_modules"]
 }

@@ -141,10 +141,15 @@ async function deactivateAdminUser(db: D1Database, targetId: number) {
   return db.prepare("UPDATE admin_users SET status = 'inactive' WHERE id = ?").bind(targetId).run();
 }
 
-// ✅ Good: Service の入口で必ずロールを検証してから実行する
+// ✅ Good: Service の入口で必ずロールを検証し、無効化と同時にセッションを失効させる
 async function deactivateAdminUser(db: D1Database, session: Session, targetId: number) {
   requireRole(session, "admin"); // admin 以外は例外をスローし、以降の処理を実行しない
-  return db.prepare("UPDATE admin_users SET status = 'inactive' WHERE id = ?").bind(targetId).run();
+  // status の更新だけでは既存の admin_sessions 行が生き残る。失効は行削除で即時反映する
+  // のが §1-1 の原則なので、必ず同一トランザクション（batch）でセッションも削除する。
+  return db.batch([
+    db.prepare("UPDATE admin_users SET status = 'inactive' WHERE id = ?").bind(targetId),
+    db.prepare("DELETE FROM admin_sessions WHERE admin_user_id = ?").bind(targetId),
+  ]);
 }
 
 // requireRole の実装例（apps/admin/src/lib/server/services/ 配下）

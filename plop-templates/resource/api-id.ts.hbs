@@ -13,7 +13,8 @@ import { update{{pascalCase name}}Schema } from "$lib/server/validation/{{camelC
 export async function GET({ params, cookies }: APIContext): Promise<Response> {
   try {
     const db = createDb(env.DB);
-    await requireSession(cookies, db);
+    const session = await requireSession(cookies, db);
+    requireRole(session, "{{readRole}}");
 
     const row = await get{{pascalCase name}}By{{pascalCase externalKeyField}}(db, params.id!);
     return jsonItem(row);

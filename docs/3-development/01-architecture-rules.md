@@ -42,7 +42,7 @@ related-docs:
 | CSS | Tailwind CSS | v4（`@tailwindcss/vite` 経由、CSS-first。`@import "tailwindcss";` で開始）。`tailwind.config.js` は使わない |
 | Database | Cloudflare D1（SQLite 互換） | バインディング名は必ず `DB`。マイグレーションは Drizzle Kit 生成 SQL（`packages/schema/migrations/` + `wrangler d1 migrations apply`、`apps/admin` からのみ実行） |
 | ORM / スキーマ管理 | Drizzle（`drizzle-orm` + `drizzle-kit`、SQLite/D1 dialect） | スキーマ定義の正本は DEV-07（Markdown テーブル定義）。`schema-build` スキル（実装済み）が DEV-07 の記述から Drizzle スキーマ（TS、`packages/schema/src/schema.ts`）を生成し、そこから `drizzle-kit generate`（`pnpm db:generate`）で migration SQL（`packages/schema/migrations/`）を生成する 2 段階パイプライン。`packages/schema` は `apps/public`/`apps/admin` 双方から参照される共有パッケージ。型は Drizzle が `$inferSelect` で自動導出するため型定義ファイルの別生成は不要（`apps/admin` が `packages/schema` から直接 import する。別パッケージへの再エクスポートは行わない — DEV-01 §1「リポジトリ構成」参照） |
-| スケルトン生成（開発時のみ） | Plop | `scaffold` スキル（`.claude/skills/scaffold/`）が DEV-07（テーブル定義）・DEV-09（状態遷移、採用時）を読み、`apps/admin` に Service・Zod バリデーション・API ルートの雛形を一括生成する。`plop`（ルートの devDependency）・`plopfile.mjs`・`plop-templates/` は同梱済み（両アプリにコードを生成するため、`eslint.config.js` と同様にルート 1 箇所に置く — `apps/*` は互いの内部に書き込まない）。実行は `pnpm generate <generator>`。**ただし `resource` ジェネレータの雛形が前提とする参照実装（`apps/admin/src/lib/server/`）は未整備のため、現時点で実行できるのは `pages` ジェネレータのみ。**
+| スケルトン生成（開発時のみ） | Plop | `scaffold` スキル（`.claude/skills/scaffold/`）が DEV-07（テーブル定義）・DEV-09（状態遷移、採用時）を読み、`apps/admin` に Service・Zod バリデーション・API ルートの雛形を一括生成する。`plop`（ルートの devDependency）・`plopfile.mjs`・`plop-templates/` は同梱済み（両アプリにコードを生成するため、`eslint.config.js` と同様にルート 1 箇所に置く — `apps/*` は互いの内部に書き込まない）。実行は `pnpm generate <generator>`。`resource` は `readRole` / `writeRole` を分けて尋ね、read 側も DEV-02 §2-3 のマトリクスに従って `requireRole` で絞る（Inquiry 一覧のように `editor: ✕` のリソースがあるため）。
 
 もう一つの `pages` ジェネレータは PRD-04 §3-1/§3-2 の「ルート」列を直接読み、`apps/admin`・`apps/public` **両方**の Astro ページ雛形を 1 コマンドで一括生成する（ルート + Layout + 見出しのみ。レイアウト構成の判断は含めない — `admin-design`/`public-design` が担当）。Service 層の雛形生成のスコープはバックエンド層のみ。ビルド物には含めない devDependency |
 | ファイルストレージ | Cloudflare R2 | バインディング名は必ず `BUCKET` |
@@ -117,7 +117,7 @@ AI・開発者が「一般的なベストプラクティス」として提案・
 
 | 原則名 | 内容 | 違反例 | 適用例 |
 | --- | --- | --- | --- |
-| **レイヤー責務分離** | `apps/admin` 内で Astro ページ/API ルート → Service → D1 の責務を厳守（`Assumed` — ディレクトリ構成は DEV-05 で確定。`apps/public` は現時点で認証済みルートを持たず、この Service/D1 レイヤーも持たない） | `.astro` ページ内で直接 D1 クエリを書く | `apps/admin/src/lib/server/services/` 経由でビジネスロジック、D1 アクセスはその内部に集約 |
+| **レイヤー責務分離** | `apps/admin` 内で Astro ページ/API ルート → Service → D1 の責務を厳守（`Assumed` — ディレクトリ構成は DEV-05 で確定。`apps/public` にも Service/D1 レイヤーは存在する — お問い合わせ送信（DEV-04 §5-3b）が公開側の API ルートだから。ただし認証済みルートは持たない） | `.astro` ページ内で直接 D1 クエリを書く | `apps/admin/src/lib/server/services/` 経由でビジネスロジック、D1 アクセスはその内部に集約 |
 | **認可チェックの徹底** | 管理系の全操作は Service 層で `admin` / `editor` のロールを検証（PRD-01 §1-2。多階層テナント境界ではない、単一運営前提） | 認可チェックを飛ばして API ルートから直接 D1 を更新 | `requireRole(session, "admin")` のような検証関数を Service 呼び出し前に必ず通す |
 | **レスポンスをブロックしない** | 重い後処理（メール送信・監査ログ・通知）はレスポンス返却後に実行し、定期処理は Cron Triggers に寄せる（Queues は不採用 — §3） | API ルート内でメール送信完了を同期的に待ってからレスポンスを返す | `ctx.waitUntil()` で後処理をバックグラウンド化、日次処理は Scheduled Worker |
 | **状態遷移の集約** | エンティティの状態遷移は単一の遷移関数/モジュールに集約 | 各所で status の文字列を直書き | `transition(entity, "approved")` のような単一の遷移関数経由 |
@@ -129,18 +129,18 @@ AI・開発者が「一般的なベストプラクティス」として提案・
 
 ## 5. レイヤー構造
 
-`apps/public`（公開サイト）と `apps/admin`（管理 CMS）は独立した Astro プロジェクト・Cloudflare Worker であり（§1「リポジトリ構成」参照）、以下の Service / API Route / D1 レイヤーは `apps/admin` にのみ存在する。`apps/public` は現時点で認証済みルートを持たず、Astro Page（+ Svelte Island）のみで完結する。
+`apps/public`（公開サイト）と `apps/admin`（管理 CMS）は独立した Astro プロジェクト・Cloudflare Worker であり（§1「リポジトリ構成」参照）、以下の Service / API Route / D1 レイヤーは `apps/admin` にのみ存在する。`apps/public` も Service / API Route / D1 レイヤーを持つ（お問い合わせ送信 — DEV-04 §5-3b）が、認証済みルートは持たない。AdminUser 認証のコードは一切共有しない（DEV-02 §1-2）。
 
 ### 5-1. Web（Astro + Svelte）
 
 ```
 Astro Page (.astro) → Svelte Island (client:*、表示・操作受付のみ)
-（apps/admin のみ）Astro Page / API Route → Service → D1 (env.DB.prepare)
+Astro Page / API Route → Service → D1 (env.DB.prepare)
                                        ↓
                      (後処理: ctx.waitUntil / 定期処理: Cron Triggers)
 ```
 
-### 5-2. API（apps/admin のみ）
+### 5-2. API（apps/admin が主。apps/public はお問い合わせ送信のみ — DEV-04 §5-3b）
 
 ```
 Request → Astro API Route (apps/admin/src/pages/api/**/*.ts) → Service → D1
@@ -154,9 +154,9 @@ Request → Astro API Route (apps/admin/src/pages/api/**/*.ts) → Service → D
 | --- | --- | --- |
 | Astro Page | ページのレンダリング、Svelte アイランドの配置、`<head>`/レイアウト選択 | `apps/public/src/pages/**/*.astro`（公開） / `apps/admin/src/pages/**/*.astro`（管理） |
 | Svelte Island | クライアント側の表示状態管理、ユーザー操作受付、Service/API への委譲 | `apps/public/src/components/`（公開） / `apps/admin/src/lib/components/`（管理・shadcn-svelte 含む） |
-| API Route（apps/admin のみ） | リクエストの入出力ハンドリングのみ | `apps/admin/src/pages/api/**/*.ts` |
-| Service（apps/admin のみ） | 業務ロジック、トランザクション制御、後処理の起動（`Assumed` — DEV-05 で確定） | `apps/admin/src/lib/server/services/` |
-| D1 アクセス（apps/admin のみ） | プリペアドステートメント、認可チェックの強制（`Assumed`） | Service 内、または `apps/admin/src/lib/server/db/` |
+| API Route | リクエストの入出力ハンドリングのみ | `apps/admin/src/pages/api/**/*.ts` |
+| Service | 業務ロジック、トランザクション制御、後処理の起動（`Assumed` — DEV-05 で確定） | `apps/admin/src/lib/server/services/` |
+| D1 アクセス | プリペアドステートメント、認可チェックの強制（`Assumed`） | Service 内、または `apps/admin/src/lib/server/db/` |
 | Middleware | 認証状態の付与、セキュリティヘッダー | `apps/public/src/middleware.ts` / `apps/admin/src/middleware.ts`（各アプリに 1 つずつ。認証は行わずセキュリティヘッダーのみ） |
 
 ---

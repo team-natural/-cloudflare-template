@@ -93,10 +93,14 @@ This is a pnpm workspace (`pnpm-workspace.yaml`) orchestrated by Turborepo (`tur
   Deploys as its own Cloudflare Worker.
 - `apps/admin` — admin CMS (Astro SSR + Svelte islands + Tailwind + shadcn-svelte). Deploys as its
   own Cloudflare Worker. Depends on `packages/schema` via `workspace:*`.
-- `packages/schema` — shared Drizzle schema/migrations, imported by `apps/admin` as `@app/schema`.
+- `packages/schema` — shared Drizzle schema (+ the `migrations/` a project generates), imported by
+  both apps as `@app/schema`; the ULID helper is `@app/schema/ulid`.
 
-Both apps currently ship as minimal scaffolds (one placeholder page each, no auth/login wired up).
-`packages/schema` ships with one placeholder table. The full tech-stack rationale (versions, why
+`apps/admin` ships the AdminUser auth backend (login/logout/me, PBKDF2, D1-backed sessions, KV
+lockout) plus the Post reference implementation that the `scaffold` generator mirrors; its login
+**UI** is not wired to that API yet (DEV-06 §4-4 — that is step 3 of the workflow). `apps/public`
+ships one placeholder page. `packages/schema` ships DEV-07 §3-1〜§3-3's standard tables and no
+`migrations/` (see "D1 / R2 / KV binding rules"). The full tech-stack rationale (versions, why
 each library was chosen, what's still `Open`) lives in `docs/3-development/01-architecture-rules.md`
 (DEV-01) — do not duplicate stack decisions here or in `docs/`; this section only describes what's
 already scaffolded in this repo.
@@ -117,8 +121,10 @@ Astro Page / API Route  →  Service  →  D1
 - `apps/public` and `apps/admin` never import each other; shared code goes in `packages/*`, and
   `packages/*` never imports back from `apps/*`.
 - All of the above is machine-checked by `eslint-plugin-boundaries` in `eslint.config.js`, so
-  `pnpm lint` fails on a violation. Note `apps/admin/src/lib/server/` does not exist yet — it
-  appears when the project grows its first Service (DEV-05 §1 owns its internal layout).
+  `pnpm lint` fails on a violation. `apps/admin/src/lib/server/` ships with the reference
+  implementation (auth, http helpers, Post service); DEV-05 §1 owns its internal layout.
+  `apps/public/src/lib/server/` holds exactly one thing by default — the inquiry submission
+  endpoint's service (DEV-04 §5-3b) — and shares no auth code with admin (DEV-02 §1-2).
 
 Cloudflare bindings are read with `import { env } from "cloudflare:workers"` — **not**
 `Astro.locals.runtime.env`, which Astro removed in v6 and which does not exist in the v7 used here.
@@ -172,7 +178,9 @@ Admin-only — `apps/public` gets plain Tailwind and no component library.
 ## Current state / commands
 
 Root `package.json` scripts fan out to every workspace package via Turborepo:
-`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm db:generate`. `pnpm lint` (`eslint .`) and
+`pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm test` / `pnpm db:generate`.
+`pnpm generate <pages|resource>` runs the root `plopfile.mjs` (the `scaffold` skill drives it —
+it writes into both apps, so it is not per-app). `pnpm lint` (`eslint .`) and
 `pnpm format` / `pnpm format:check` (`prettier`) run once at the repo root — not fanned out per
 package — since ESLint's layer-boundary rules and Prettier's config are scoped by path pattern in
 a single root `eslint.config.js` / `.prettierrc` (DEV-01 §1). `pnpm check` is the pre-commit/PR

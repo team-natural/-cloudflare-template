@@ -3,7 +3,8 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"],
+    // WebWorker provides the Workers-runtime globals (crypto.getRandomValues in src/ulid.ts).
+    "lib": ["ES2022", "WebWorker"],
     "types": [],
     "strict": true,
     "noUncheckedIndexedAccess": true,

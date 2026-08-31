@@ -14,7 +14,10 @@ import { create{{pascalCase name}}Schema } from "$lib/server/validation/{{camelC
 export async function GET({ request, cookies }: APIContext): Promise<Response> {
   try {
     const db = createDb(env.DB);
-    await requireSession(cookies, db);
+    const session = await requireSession(cookies, db);
+    // Reads are gated too: DEV-02 §2-3 marks several resources editor:✕ for viewing
+    // (Inquiry list, AdminUser, site settings, audit log), not just for writing.
+    requireRole(session, "{{readRole}}");
 
     const url = new URL(request.url);
     const afterId = decodeCursor(url.searchParams.get("cursor"));

@@ -36,7 +36,7 @@ related-docs:
 
 ## 1. ディレクトリ構成（標準）
 
-このモノレポでは `apps/public`（公開サイト）と `apps/admin`（管理 CMS）が独立した Cloudflare Worker であり（DEV-01 §1「リポジトリ構成」参照）、以下のツリーは **`apps/admin` 配下**のバックエンド構成を示す（`apps/public` は現時点で Astro Page + Svelte island のみで、`lib/server/` を持たない）。DEV-01 §5-3 で確定しているのは各アプリの `src/pages/`・`src/middleware.ts`（+ `apps/public/src/components/`）のみだったが、`apps/admin/src/lib/server/` 以下の内部構成は Post（標準エンティティ）を例にした参照実装で確定済み（Confirmed）。新規リソースはこの構成・命名にそのまま従う（`scaffold` スキルもこれを雛形にする — `.claude/skills/scaffold/`、`apps/admin/plopfile.mjs`）。
+このモノレポでは `apps/public`（公開サイト）と `apps/admin`（管理 CMS）が独立した Cloudflare Worker であり（DEV-01 §1「リポジトリ構成」参照）、以下のツリーは **`apps/admin` 配下**のバックエンド構成を示す（`apps/public` も同じ構成の `lib/server/` を持つ — 標準ではお問い合わせ送信の 1 エンドポイントのみ。DEV-04 §5-3b 参照。マイページ機能（FG-07）・軽量 EC（FG-05）採用時はここに増える）。DEV-01 §5-3 で確定しているのは各アプリの `src/pages/`・`src/middleware.ts`（+ `apps/public/src/components/`）のみだったが、`apps/admin/src/lib/server/` 以下の内部構成は Post（標準エンティティ）を例にした参照実装で確定済み（Confirmed）。新規リソースはこの構成・命名にそのまま従う（`scaffold` スキルもこれを雛形にする — `.claude/skills/scaffold/`、ルートの `plopfile.mjs`）。
 
 ```text
 apps/admin/src/
@@ -65,8 +65,12 @@ packages/schema/
 └── migrations/                      # D1 migrations（Drizzle Kit 生成 SQL。apps/admin からのみ適用）
 
 apps/public/src/
-├── pages/**/*.astro                 # 公開ページ（Layout.astro）
-└── components/                      # Svelte island（公開側）
+├── pages/
+│   ├── api/v1/inquiries.ts          # お問い合わせ送信（認証不要 — DEV-04 §5-3b）
+│   └── **/*.astro                   # 公開ページ（Layout.astro）
+├── lib/server/                      # 公開側の Service / D1。admin 側とコードを共有しない
+├── components/                      # Svelte island（公開側）
+└── middleware.ts                    # セキュリティヘッダーのみ
 ```
 
 > Laravel の `Jobs/` / `Events/` / `Listeners/` / `Notifications/` / `StateMachines/` / `Enums/` に相当する専用ディレクトリは無い。非同期処理は `ctx.waitUntil()` と Cron Triggers（Queues は不採用 — DEV-01 §1/§3）、状態遷移はドメイン別 Service 内の単一関数（DEV-01 §4）、列挙値は TypeScript の string literal union 型で代替する。

@@ -31,6 +31,25 @@ export function allowedTransitions(status: {{pascalCase name}}Status): {{pascalC
 }
 {{/if}}
 
+// The internal INTEGER PRIMARY KEY never leaves this layer — API clients only ever see the
+// external key as `id` (DEV-05 §2, DEV-07 §1). Mirrors toPublicAdminUser in ./admin-users.ts.
+// NOTE: internal FK columns (e.g. authorId, categoryId) are still passed through as raw
+// integers. If this resource has any, map them to the referenced row's public key or drop
+// them here — see .claude/skills/scaffold/SKILL.md Step 4.
+type {{pascalCase name}}Row = typeof {{table}}.$inferSelect;
+
+export function toPublic{{pascalCase name}}(row: {{pascalCase name}}Row) {
+{{#if hasAutoKey}}
+  const { id, publicId, ...rest } = row;
+  void id;
+  return { id: publicId, ...rest };
+{{else}}
+  const { id, ...rest } = row;
+  void id;
+  return { id: row.{{externalKeyField}}, ...rest };
+{{/if}}
+}
+
 const DEFAULT_PER_PAGE = 20;
 const MAX_PER_PAGE = 100;
 
@@ -45,10 +64,14 @@ export async function list{{pascalCase name}}(db: DbClient, options: { afterId?:
 
   const hasMore = rows.length > perPage;
   const page = rows.slice(0, perPage);
-  return { items: page, nextId: hasMore ? page[page.length - 1].id : null };
+  // nextId stays internal — it is the cursor input, and encodeCursor() opaques it.
+  return { items: page.map(toPublic{{pascalCase name}}), nextId: hasMore ? page[page.length - 1].id : null };
 }
 
-export async function get{{pascalCase name}}By{{pascalCase externalKeyField}}(db: DbClient, {{camelCase externalKeyField}}: string) {
+// Internal: returns the raw row, including the integer id the update/delete/transition
+// functions below need for their WHERE clauses. Not exported — the internal id must not
+// escape this module (DEV-05 §2).
+async function find{{pascalCase name}}Row(db: DbClient, {{camelCase externalKeyField}}: string): Promise<{{pascalCase name}}Row> {
   const [row] = await db
     .select()
     .from({{table}})
@@ -56,6 +79,10 @@ export async function get{{pascalCase name}}By{{pascalCase externalKeyField}}(db
     .limit(1);
   if (!row) throw new NotFoundError();
   return row;
+}
+
+export async function get{{pascalCase name}}By{{pascalCase externalKeyField}}(db: DbClient, {{camelCase externalKeyField}}: string) {
+  return toPublic{{pascalCase name}}(await find{{pascalCase name}}Row(db, {{camelCase externalKeyField}}));
 }
 
 export async function create{{pascalCase name}}(db: DbClient, input: Create{{pascalCase name}}Input) {
@@ -75,21 +102,21 @@ export async function create{{pascalCase name}}(db: DbClient, input: Create{{pas
       updatedAt: now,
     })
     .returning();
-  return row;
+  return toPublic{{pascalCase name}}(row!);
 }
 
 export async function update{{pascalCase name}}(db: DbClient, {{camelCase externalKeyField}}: string, input: Update{{pascalCase name}}Input) {
-  const existing = await get{{pascalCase name}}By{{pascalCase externalKeyField}}(db, {{camelCase externalKeyField}});
+  const existing = await find{{pascalCase name}}Row(db, {{camelCase externalKeyField}});
   const [row] = await db
     .update({{table}})
     .set({ ...input, updatedAt: new Date().toISOString() })
     .where(eq({{table}}.id, existing.id))
     .returning();
-  return row;
+  return toPublic{{pascalCase name}}(row!);
 }
 
 export async function delete{{pascalCase name}}(db: DbClient, {{camelCase externalKeyField}}: string): Promise<void> {
-  const existing = await get{{pascalCase name}}By{{pascalCase externalKeyField}}(db, {{camelCase externalKeyField}});
+  const existing = await find{{pascalCase name}}Row(db, {{camelCase externalKeyField}});
   await db.delete({{table}}).where(eq({{table}}.id, existing.id));
 }
 {{#if hasTransitions}}
@@ -97,7 +124,7 @@ export async function delete{{pascalCase name}}(db: DbClient, {{camelCase extern
 // Single transition function per DEV-01 §4「状態遷移の集約」— status is never updated by any
 // other function in this file.
 export async function transition{{pascalCase name}}(db: DbClient, {{camelCase externalKeyField}}: string, to: {{pascalCase name}}Status, session: Session) {
-  const existing = await get{{pascalCase name}}By{{pascalCase externalKeyField}}(db, {{camelCase externalKeyField}});
+  const existing = await find{{pascalCase name}}Row(db, {{camelCase externalKeyField}});
   const from = existing.{{statusField}} as {{pascalCase name}}Status;
 
   if (!allowedTransitions(from).includes(to)) {
@@ -122,6 +149,6 @@ export async function transition{{pascalCase name}}(db: DbClient, {{camelCase ex
     }),
   ]);
 
-  return updatedRows[0];
+  return toPublic{{pascalCase name}}(updatedRows[0]!);
 }
 {{/if}}

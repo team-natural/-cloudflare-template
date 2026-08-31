@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "version": "1.0.0",
-  "main": "./src/schema.ts",
-  "types": "./src/schema.ts",
+  "exports": {
+    ".": "./src/schema.ts",
+    "./ulid": "./src/ulid.ts"
+  },
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit"

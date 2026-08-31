@@ -10,13 +10,10 @@ implementation (`apps/admin/src/lib/server/services/posts.ts`, `apps/admin/src/p
 for a new resource, via the `resource` Plop generator (`plopfile.mjs` at the repo root, templates in
 `plop-templates/resource/`). Run it from the repo root.
 
-> **`resource` cannot run in the bare template yet.** `plop`, `plopfile.mjs` and
-> `plop-templates/` do ship (at the repo root), and the `pages` generator below works today. But the `resource`
-> templates import `$lib/server/{db/client,http/*,auth/session,services/activity-log}`, and
-> neither those nor the Post reference implementation exist in `apps/admin/src/lib/server/` yet —
-> generated files would reference missing modules. Until that layer lands, stop and say so: do not
-> hand-write files pretending to be generator output, and do not invent the Service-layer
-> conventions; DEV-05 §1 owns those.
+Both generators work in the bare template: `plop`, `plopfile.mjs` and `plop-templates/` ship at
+the repo root, and the Post reference implementation the `resource` templates mirror lives in
+`apps/admin/src/lib/server/`. Do not hand-write files pretending to be generator output, and do
+not invent Service-layer conventions — DEV-05 §1 owns those.
 
 **Precondition**: the target table must already exist in `packages/schema/src/schema.ts` (run the
 `schema-build` skill first if it doesn't — scaffold reads the table, it doesn't create it).
@@ -66,6 +63,7 @@ From these, work out:
 | `table` | The Drizzle export name in `packages/schema/src/schema.ts` (e.g. `categories`) — DEV-07's table name |
 | `externalKeyField` | The column used as the URL id. `publicId` if the table has one (DEV-07 §1's convention); otherwise the table's natural unique key (e.g. `slug` for `categories`/`tags`, which have no `public_id` — DEV-07 §4-3/§4-4) |
 | `fields` | Comma-separated client-writable columns for create/update. Exclude the external key, `id`, `status`/state column, `created_at`/`updated_at`, and any column set from the session (e.g. `author_id`) rather than the request body |
+| `readRole` | `editor` or `admin` — who may list/read. DEV-02 §2-3 marks Inquiry list, AdminUser management, site settings and audit-log viewing as `editor: ✕`, so this is not always the same as `writeRole` |
 | `writeRole` | `editor` or `admin` — who may create/update/delete (DEV-02 §2-3) |
 | `hasTransitions` | Whether DEV-09 defines a state machine for this entity |
 | `statusField` | The status column name (usually `status`) — leave empty if `hasTransitions` is false |
@@ -74,10 +72,10 @@ From these, work out:
 ## Step 2 — Run the generator
 
 ```bash
-pnpm generate resource -- --name=<name> --table=<table> --externalKeyField=<field> --fields=<csv> --writeRole=<role> --hasTransitions=<true|false> --statusField=<field-or-empty> --transitions=<csv-or-empty>
+pnpm generate resource -- --name=<name> --table=<table> --externalKeyField=<field> --fields=<csv> --readRole=<role> --writeRole=<role> --hasTransitions=<true|false> --statusField=<field-or-empty> --transitions=<csv-or-empty>
 ```
 
-All seven flags are required in this order-independent `--flag=value` form — Plop's CLI bypass
+All eight flags are required in this order-independent `--flag=value` form — Plop's CLI bypass
 mechanism cannot skip conditional prompts, so `statusField`/`transitions` must always be passed
 (empty string when there's no state machine). Do not run `pnpm generate resource` without the flags
 from an agent context — it drops into interactive prompts and hangs; always use the bypass form
@@ -114,6 +112,8 @@ and hand-add if needed:
 - **Refinements on validation fields** — the generated Zod schemas have no `.min()`/`.max()`/etc; add them from DEV-07's column remarks (e.g. "最大 255 文字を想定")
 - **Session-derived fields on create** — e.g. Post's `authorId: session.adminUserId` isn't in the generic template's `create<Name>` (which takes no `session` param); add it by hand if the resource needs one, and update the API route to pass `session` through
 - **Side effects inside a transition** — e.g. Inquiry's `new → in_progress` transition should also set `handled_by` (DEV-09 §2-2-3); the generated `transition<Name>` only updates the status column and calls `logActivity`
+- **Internal FK columns in the response** — `toPublic<Name>()` drops the internal integer `id` but passes other columns through as-is. If the table has FK columns (`authorId`, `categoryId`, `uploaderId`, …), map them to the referenced row's public key or drop them — the generated mapper leaves a NOTE comment where to do it
+- **R2-backed resources** — `media` cannot be fully generated: the list/detail/PATCH handlers are reusable, but POST and DELETE touch R2 and must be hand-written (DEV-04 §5-3 "Media アップロード")
 - **Per-action role overrides** — every generated action route uses the single `writeRole` answer; split roles per action by hand if DEV-02 §2-3 ※1's per-project judgment calls for it (as Post's hand-written `unpublish.ts`/`archive.ts` do, using `admin` while `publish.ts` uses `editor`)
 
 ## Reporting

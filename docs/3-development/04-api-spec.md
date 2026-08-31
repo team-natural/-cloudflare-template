@@ -199,6 +199,46 @@ AdminUser はセルフサーブの新規登録を持たない（招待制、§5-
 | GET | `/api/v1/ai/jobs/{job}` | ジョブ状態取得 |
 <!-- SAMPLE END -->
 
+#### Media アップロード（`apps/admin`。F-04-04 / ADM-04）
+
+実体は R2、メタ情報は `media` テーブル（DEV-07 §4-6）。**Worker が multipart を直接受け、
+`env.BUCKET.put()` してから `media` に INSERT する**（`Confirmed`）。presigned URL 方式は
+採らない — 署名発行・完了通知・孤立オブジェクトの回収が増え、標準構成には過剰。
+
+| メソッド | パス | 用途 |
+| --- | --- | --- |
+| POST | `/api/v1/media` | アップロード（`multipart/form-data`。R2 キーは `media/<ULID>/<filename>`） |
+| GET | `/api/v1/media` | 一覧（カーソル方式 — §8） |
+| GET | `/api/v1/media/{id}` | 詳細（`public_id`） |
+| PATCH | `/api/v1/media/{id}` | `alt_text` 等のメタ更新 |
+| DELETE | `/api/v1/media/{id}` | R2 オブジェクトと `media` 行を同時に削除 |
+
+- **`scaffold` の `resource` ジェネレータは使えない**（純粋な D1 CRUD しか生成しないため）。
+  一覧・詳細・メタ更新は生成物を流用できるが、POST と DELETE は R2 操作を含むので手実装する。
+- Workers のリクエストサイズ上限（有料プラン 100MB）がそのまま上限。それを超える要件が出た
+  場合は presigned URL 方式へ切り替える（新規 GOV-01 決定として記録する）。
+- R2 の削除は D1 の削除と原子的にできない。行を消してからオブジェクトを消し、失敗時は孤立
+  オブジェクトを許容する（逆順にすると参照先の無い行が残り、画面が壊れる）。
+
+### 5-3b. 公開側エンドポイント（`apps/public` に置く。認証不要）
+
+公開サイトから D1 への書き込みが必要な標準機能はお問い合わせ送信のみ（SCR-05 / F-06-03）。
+**これは `apps/public` 側の API ルートとして実装する**（`Confirmed`）。管理側のエンドポイントへ
+クロスオリジンで投げる形は採らない — 管理サブドメインを未認証リクエストに開けることになり、
+CORS 設定とオリジン検証を恒久的に抱えるため。したがって `apps/public/src/lib/server/` は
+この時点で存在する（DEV-01 §5、DEV-05 §1 参照。AdminUser 認証コードは一切共有しない）。
+
+| メソッド | パス | 用途 | 認証 |
+| --- | --- | --- | :---: |
+| POST | `/api/v1/inquiries` | お問い合わせ送信（`inquiries` へ `status='new'` で INSERT。運営者宛通知と自動返信メールは `ctx.waitUntil()` で送る — DEV-05 §4-1） | 不要 |
+
+- **一覧・詳細・更新は公開側に置かない。** 送信記録の閲覧と対応状況変更は管理側の `admin` 限定
+  操作（DEV-02 §2-3 で `editor: ✕`）であり、`apps/admin` の `/api/v1/inquiries` が担う。
+- スパム対策はアプリコードに実装しない。Cloudflare 側（WAF / Rate Limiting Rules / Turnstile）で
+  対応する（DEV-02 §7 の役割分担と同じ）。
+- マイページ機能（FG-07）・軽量 EC（FG-05）を採用する場合、§5-4・§5-5 のエンドポイントも
+  同様に `apps/public` 側へ置く。
+
 ### 5-4. 軽量 EC（採用時のみ — PRD-03 FG-05、DEV-07 §3-5・§7）
 
 ゲストチェックアウト（顧客アカウント不要）と Member への任意紐付け（FG-07 採用時、`orders.member_id`）の両方をサポートする（PRD-01 §1-1・§1-3、DEV-07 §7-1）。サブスクリプション課金は本テンプレに存在しない（BIZ-03、00_README §2-2）。
