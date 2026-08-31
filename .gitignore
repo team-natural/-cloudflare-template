@@ -42,7 +42,14 @@ worker-configuration.d.ts
 settings.local.json
 
 # --- Playwright ---
+# Screenshots taken via the playwright MCP server (see CLAUDE.md's MCP servers section).
 .playwright-mcp/
+# `playwright test` run artifacts (traces, screenshots, videos, HTML report) — written per app
+# under apps/*/, and regenerated on every run.
+test-results/
+playwright-report/
+blob-report/
+.last-run.json
 
 # --- Others ---
 *.log

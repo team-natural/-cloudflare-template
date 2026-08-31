@@ -1,20 +1,37 @@
 ---
 name: public-design
-description: Orchestrates the full page-building chain for PUBLIC-FACING pages (LP, marketing, top page, general content) — frontend-design → baseline-ui → fixing-accessibility → fixing-motion-performance → web-design-guidelines → design-review. Use when building a new public page/screen or substantially reworking an existing one. NOT for admin screens — use the admin-design skill for those. NOT for light touch-ups — for those use the individual skill instead (spacing/typography → baseline-ui, a11y → fixing-accessibility, animation → fixing-motion-performance, guideline audit → web-design-guidelines, visual review → design-review).
+description: Orchestrates the page-building chain for PUBLIC-FACING pages (LP, marketing, top page, general content) — frontend-design → baseline-ui → fixing-accessibility → fixing-motion-performance → web-design-guidelines → design-review. Use for BOTH the site's first page (establishing run — decides the design direction) and every page after it (following run — inherits that direction instead of re-deciding it). NOT for admin screens — use the admin-design skill for those. NOT for light touch-ups — for those use the individual skill instead (spacing/typography → baseline-ui, a11y → fixing-accessibility, animation → fixing-motion-performance, guideline audit → web-design-guidelines, visual review → design-review).
 ---
 
 # Public Page Design
 
-Build a public-facing page by applying six skills **in this exact order**. Do not skip or
-reorder steps; each one assumes the previous step's output. The argument to this skill is the
-page brief (what to build, tone, constraints).
+Build a public-facing page by applying six steps **in this exact order**. Do not skip or
+reorder them; each one assumes the previous step's output. Step 1 has two forms — pick the mode
+below before starting. The argument to this skill is the page brief (what to build, tone,
+constraints).
 
-Scope: this pipeline is for building a public page from scratch or substantially reworking an
-existing one — Step 1 revisits the visual direction, so running it on an existing page WILL
-reshape its look. For small fixes on an existing page, don't use this skill; invoke the one
-specialized skill that owns the problem (see the description above). For admin screens, use
-`admin-design` instead — admin design is decided by the existing shadcn-svelte patterns, not by
-this chain.
+## Pick a mode first (this decides what Step 1 does)
+
+A public site's look is decided **once**, on its first page, and every page after it inherits
+that decision. So this skill has two modes. State which one you are running and why, before
+writing any code.
+
+| | **Establishing run** (Mode A) | **Following run** (Mode B) |
+|---|---|---|
+| When | The site's first page — normally the top page, built together with `Layout.astro`. Also a deliberate site-wide redesign. | Every subsequent page (`/blog`, `/about`, a detail page…), including filling in a `pnpm generate pages` skeleton. |
+| Step 1 | `frontend-design` — commits to a visual direction | **Skipped.** Inherit the established direction from the reference page + tokens (see Step 1B) |
+| Steps 2–6 | All run | All run, unchanged |
+
+**Do not run Mode A twice on one site.** `frontend-design` re-decides the visual direction
+every time it runs, so a second establishing run gives that page a different look from the
+rest — the single most common way a public site ends up inconsistent. If a page genuinely needs
+to depart from the site's direction (a campaign LP), say so explicitly and treat it as its own
+mini-site with its own reference page.
+
+For admin screens use `admin-design` instead — admin design is decided by the existing
+shadcn-svelte patterns, not by this chain. For a small fix on an existing page, don't use this
+skill at all; invoke the one specialized skill that owns the problem (see the description
+above).
 
 ## Project constraints (apply throughout every step)
 
@@ -22,14 +39,23 @@ this chain.
   islands + Tailwind v4 (see CLAUDE.md's Architecture section). shadcn-svelte is the admin-side
   system only.
 - **Layout**: wrap the page in `apps/public/src/layouts/Layout.astro` and import
-  `apps/public/src/styles/global.css` (plain Tailwind, no design-token layer). Site-wide
+  `apps/public/src/styles/global.css` (plain Tailwind — no component library; for its token layer
+  see "Design tokens" below). Site-wide
   `<head>` changes (OGP, fonts) belong in the layout, not the page — pages contain only their
   `<main>` content.
 - **Svelte components are islands**: place them in `apps/public/src/components/`, mount from
   the `.astro` page with a `client:*` directive, and use Svelte 5 runes syntax (`$state`, etc.).
-- **Design tokens**: `global.css` deliberately has no `@theme` token layer — if Step 1 commits
-  to recurring custom values (a brand color, a type scale), keep them as Tailwind utility
-  composition or page-scoped CSS custom properties; don't reach into `admin.css`'s tokens.
+- **Design tokens**: `global.css` ships as a bare `@import "tailwindcss";` because the *template*
+  has no brand — not because the public side is meant to stay tokenless. DEV-06 §6 requires
+  theme values to be managed in one place and forbids per-component overrides, so:
+  - **Mode A**: when Step 1 commits to recurring custom values (brand colors, a type scale, a
+    radius), add them to a `@theme` block in `apps/public/src/styles/global.css` and consume them
+    through the utilities Tailwind generates from them. Do not scatter the same hex or `rem` value
+    across pages, and do not park them in page-scoped CSS custom properties — that is the
+    per-page duplication DEV-06 §6 rules out, and it leaves Mode B nothing to inherit.
+  - **Mode B**: use the existing tokens. If a page seems to need a new one, that is a site-wide
+    decision — add it to `global.css`, don't hardcode it in the page.
+  - Never reach into `admin.css`'s tokens from `apps/public`.
 
 ### Chain depth
 
@@ -37,11 +63,40 @@ Full 6-step chain: top page, LP, pricing/feature pages — anything that carries
 face. Simple pages (legal pages, `404.astro`/`500.astro`): Steps 1 and 6 are usually enough —
 state which depth you chose and why.
 
-## Step 1 — Design & build: `frontend-design`
+## Step 1A — Establishing run (Mode A): `frontend-design`
 
 Invoke the `frontend-design` skill and follow it while implementing the page: pin down the
 subject/audience/job of the page, commit to a distinctive aesthetic direction, then build the
 full UI. Done when the page renders end-to-end with real (or realistic) content.
+
+Because every later page inherits this run, finish it by leaving the direction somewhere the
+next page can actually read:
+
+- Recurring values go in `global.css`'s `@theme` block (see "Design tokens" above).
+- Anything shared across pages — header, footer, `<head>`/OGP — belongs in
+  `apps/public/src/layouts/Layout.astro`, not in the page. Build the layout as part of this run.
+- Extract the components you'd otherwise re-type on page 2 (section wrapper, card, button,
+  prose block) into `apps/public/src/components/`.
+- Report the direction in prose too: the type scale, spacing rhythm, color roles, and any
+  signature treatment. This is what a Mode B run is told to follow.
+
+## Step 1B — Following run (Mode B): inherit, don't re-decide
+
+**Do not invoke `frontend-design`.** Read the reference page first — the site's established page,
+normally `apps/public/src/pages/index.astro` — plus `Layout.astro`, `global.css`'s `@theme`
+block, and `apps/public/src/components/`. Name the page you used as the reference in your report;
+where several exist, prefer the most recent page of the same kind (list / detail / form / static).
+
+Then build this page out of what you found: same layout wrapper, same tokens, same components,
+same spacing rhythm and heading scale. Reach for a new component only when nothing existing
+composes into what the page needs — and build it in the established style, in
+`apps/public/src/components/`, so the page after this one inherits it too.
+
+If the page is a `pnpm generate pages` skeleton, treat this as filling it in: keep its route and
+frontmatter, replace the placeholder heading with the real content.
+
+Done when the page renders end-to-end with realistic content and reads as the same site as the
+reference page.
 
 ## Step 2 — Polish pass: `baseline-ui`
 
@@ -82,7 +137,9 @@ prioritized list of findings.
 ## Feedback loop
 
 If design-review reports findings, fix them by returning to the step that owns the problem —
-visual direction → Step 1, spacing/typography → Step 2, a11y → Step 3, animation jank or
+visual direction → Step 1A in Mode A; in Mode B a "wrong visual direction" finding means the page
+drifted from the reference, so fix the page against the reference (Step 1B) rather than re-opening
+the site's direction. Spacing/typography → Step 2, a11y → Step 3, animation jank or
 performance → Step 4, guideline violations (forms, touch targets, dark mode, i18n, etc.) →
 Step 5 — then re-run Step 6. Any fix that changed code should also pass back through the
 Step 5 audit before re-verifying in the browser. Stop when design-review comes back clean or
@@ -91,5 +148,11 @@ forever (max 2 loops without asking).
 
 ## Reporting
 
-At the end, summarize in the user's language: what was built, what each pass changed, and the
-final design-review result (attach/reference the screenshots).
+At the end, summarize in the user's language: which mode you ran, what was built, what each pass
+changed, and the final design-review result (attach/reference the screenshots). Then, depending
+on the mode:
+
+- **Mode A**: state the design direction in prose plus the tokens you added to `global.css` and
+  the shared components/layout you created — this is the hand-off every later page follows.
+- **Mode B**: name the reference page you followed, and list anything you promoted to a shared
+  component or token so it is visible as a site-wide change rather than a page-local one.

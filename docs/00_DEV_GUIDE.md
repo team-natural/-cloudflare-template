@@ -150,7 +150,8 @@ git commit / git push                     → 人間がやる（AI は実行し�
 
 - 公開側 6 段チェーンの内訳: `frontend-design` → `baseline-ui` → `fixing-accessibility` →
   `fixing-motion-performance` → `web-design-guidelines` → `design-review`（`public-design` が起点。
-  内部スキルは軽微な修正時に単独起動も可）
+  内部スキルは軽微な修正時に単独起動も可）。2 枚目以降は Step 1 の `frontend-design` だけが
+  「1 枚目に倣う」に差し替わり、残りの 5 段はそのまま回る（§3-3 ステップ 4）
 - `design-review` は実装フェーズのページ完成ごと + 検証フェーズの最終スイープの両方で使う
 - テストは Vitest + Playwright（DEV-01 §1、導入済み）。検証フェーズまで溜めずに実装フェーズ内で機能ごとに書く
 
@@ -237,7 +238,8 @@ git commit / git push                     → 人間がやる（AI は実行し�
 
 先に UI を揃える理由は 2 つある。1 つは相互リンク — 一覧 → 詳細、パンくず、管理画面のサイドナビ
 （PRD-04 §4-1）は全ルートが存在していないと一度で正しく書けず、後から直す手戻りが出る。もう 1 つは
-一貫性 — `admin-design` は「最も近い既存画面に倣う」方式なので、1 枚目の出来が以降すべてに伝播する。
+一貫性 — `admin-design` も `public-design` の following run も「既存画面に倣う」方式なので、
+1 枚目の出来が以降すべてに伝播する。
 
 **ステップ 3: 管理画面 UI**
 
@@ -257,17 +259,21 @@ git commit / git push                     → 人間がやる（AI は実行し�
 **ステップ 4: 公開画面 UI**
 
 ```
-1 枚目（レイアウトを含む）:
+1 枚目（レイアウトを含む）— public-design の「establishing run」:
   「public-design スキルで apps/public/src/pages/index.astro と Layout.astro を更新して。
     ブリーフ: ...」
   → frontend-design（デザイン方向の決定）→ baseline-ui → fixing-accessibility
     → fixing-motion-performance → web-design-guidelines → design-review の 6 段チェーン
+  → この回で決めた値は global.css の @theme・Layout.astro・components/ に残す。
+    2 枚目以降はそれを読んで倣うので、ここに残さないと引き継げない
 
-2 枚目以降:
-  「/blog の一覧画面を、トップページで決めたデザイン方向に倣って更新して」
-  → **2 枚目以降で public-design のフルチェーンを回さない。** Step 1 の frontend-design は
-    毎回デザイン方向を再決定するため、ページごとに見た目がばらつく。方向は 1 枚目で確定させ、
-    以降は baseline-ui / fixing-accessibility 等を個別に使う
+2 枚目以降 — 同じ public-design の「following run」:
+  「public-design スキルで /blog の一覧画面を、トップページに倣って更新して」
+  → **establishing run を 2 回やらない。** Step 1 の frontend-design は毎回デザイン方向を
+    再決定するため、2 度目を回すとそのページだけ見た目がずれる。following run は Step 1 を
+    frontend-design ではなく「1 枚目 + トークン + 既存コンポーネントを読んで倣う」に
+    差し替えたもので、Step 2〜6（polish / a11y / motion / ガイドライン / 実ブラウザ検証）は
+    1 枚目と同じように全部回る
 ```
 
 **ステップ 5: 機能実装**
@@ -332,9 +338,9 @@ git commit / git push                     → 人間がやる（AI は実行し�
 | スキル | フェーズ | 使う場面 |
 | --- | --- | --- |
 | `schema-build` | 基盤 | DEV-07 のテーブル定義を Drizzle スキーマに反映し、migration SQL を生成（DEV-07 → `packages/schema/src/schema.ts` → `pnpm db:generate`） |
-| `scaffold` | 基盤 | 既存テーブル（schema-build 済み）に対して `apps/admin` に Service / Zod バリデーション / API ルートの雛形を一括生成（`npx plop resource`）。Astro ページは対象外 |
+| `scaffold` | 基盤 | 既存テーブル（schema-build 済み）に対して `apps/admin` に Service / Zod バリデーション / API ルートの雛形を一括生成（`pnpm generate resource`）。Astro ページの雛形は同じ plopfile の `pnpm generate pages` が担当（§3-2 ステップ 5-6） |
 | `admin-design` | 実装 | 管理画面の実装（shadcn-svelte 標準パターン → a11y → 実ブラウザ検証） |
-| `public-design` | 実装 | 公開側ページの実装（デザイン方向〜検証の 6 段チェーンの起点） |
+| `public-design` | 実装 | 公開側ページの実装。1 枚目は establishing run（frontend-design でデザイン方向を決定）、2 枚目以降は following run（1 枚目に倣う）— どちらも同じスキルで起動する |
 | `shadcn-svelte` | 実装 | 管理画面 UI コンポーネントの追加・調整（`npx shadcn-svelte add <component>` を含む） |
 | `design-review` | 実装・検証 | 実ブラウザでのビジュアル検証（両画面共通・単独でも使える） |
 | `frontend-design` / `baseline-ui` / `fixing-accessibility` / `fixing-motion-performance` / `web-design-guidelines` | 実装 | デザインチェーンの内部スキル。軽微な修正時は単独起動も可（余白 → baseline-ui、a11y → fixing-accessibility 等） |

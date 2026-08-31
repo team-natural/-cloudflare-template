@@ -1,6 +1,7 @@
 {
   "name": "@app/schema",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "version": "1.0.0",
   "exports": {

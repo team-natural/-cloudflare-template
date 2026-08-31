@@ -10,18 +10,21 @@ copying/forking this repository.
 
 ## Bootstrapping a new project from this template
 
-When this repo is being adapted into a real project (as opposed to being edited as the template
-itself), update these first:
+**The bootstrap checklist lives in `README.md` ("Getting started from this template") — it is the
+single source, so do not restate or re-derive its steps here.** It covers the devcontainer values,
+the package/Worker renames, creating D1/R2/KV and copying the ids into both apps, custom domains,
+secrets, the first migration and admin user, and creating the `main` branch. When asked to
+bootstrap a project, work through that checklist.
 
-1. `.devcontainer/.env`: set `COMPOSE_PROJECT_NAME` to a name unique to the project (docker compose
-   uses it to prefix container, volume, and network names — this also keeps each project's
-   `claude-config` volume, see below, from colliding with other projects) and change
-   `APP_PORT_DEV_PUBLIC` / `APP_PORT_DEV_ADMIN` so they don't collide with other projects' ports.
-2. `name` in `.devcontainer/devcontainer.json`, if it should match the project name.
-3. `.devcontainer/Dockerfile`: add any OS packages the project needs.
-4. `apps/public` and `apps/admin`: replace the scaffold pages with the real site/CMS (see
-   "Monorepo layout" below). `packages/schema`: fill in the real Drizzle tables per
-   `docs/3-development/07-database-schema.md`.
+What matters for editing code in a not-yet-bootstrapped clone:
+
+- **The placeholders are not real values.** `wrangler.jsonc` ships `replace-with-*` for every
+  `database_id` / `bucket_name` / KV `id`, and both Workers are still named `admin` / `public`.
+  Never treat these as configured, and never invent a plausible-looking id to make something run.
+- `apps/public` / `apps/admin` hold scaffold pages and `packages/schema` holds DEV-07's standard
+  tables (see "Monorepo layout" below) — a project replaces both.
+- The workflow a project follows after bootstrap (docs → bulk scaffold → admin UI → public UI →
+  features → tests) is `docs/00_DEV_GUIDE.md` §3.
 
 ## Starting the container
 
@@ -131,8 +134,12 @@ Cloudflare bindings are read with `import { env } from "cloudflare:workers"` —
 
 **Tailwind v4 is CSS-first — there is no `tailwind.config.js`.** Design tokens live in `@theme` /
 `@theme inline` blocks in the stylesheet itself: `apps/admin/src/styles/admin.css` carries the
-shadcn-svelte token layer, while `apps/public/src/styles/global.css` deliberately has none (plain
-Tailwind, no component library). Fix a token in the stylesheet, never per page.
+shadcn-svelte token layer, while `apps/public/src/styles/global.css` is a bare
+`@import "tailwindcss";` — no component library, and no token layer *in the template*, because the
+template has no brand yet. That is a starting point, not a rule: once a project settles its public
+design direction (`public-design`'s establishing run), its recurring values belong in a `@theme`
+block in `global.css`. Either way the rule is the same — fix a token in the stylesheet, never per
+page (DEV-06 §6).
 
 ## D1 / R2 / KV binding rules
 

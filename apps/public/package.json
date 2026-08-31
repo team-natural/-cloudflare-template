@@ -1,6 +1,7 @@
 {
   "name": "public",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "version": "1.0.0",
   "scripts": {
