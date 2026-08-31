@@ -22,12 +22,13 @@ function parseTransitions(value) {
   });
 }
 
-function groupByFrom(transitions) {
+// Seeded with every state, not just the ones that appear as a `from`: the generated
+// Record<Status, Status[]> must be total, and a terminal state (Inquiry's `resolved`) only ever
+// appears as a `to`. Without the seed the emitted object is missing that key and fails typecheck.
+function groupByFrom(transitions, states) {
   const grouped = {};
-  for (const { from, to } of transitions) {
-    grouped[from] ??= [];
-    grouped[from].push({ to });
-  }
+  for (const state of states) grouped[state] = [];
+  for (const { from, to } of transitions) grouped[from].push({ to });
   return grouped;
 }
 
@@ -211,7 +212,7 @@ export default function (plop) {
         }
         data.states = Array.from(states);
         data.firstState = transitions[0].from; // the state a newly created row starts in
-        data.transitionsByFrom = groupByFrom(transitions);
+        data.transitionsByFrom = groupByFrom(transitions, data.states);
 
         for (const { action, to } of uniqueActions(transitions)) {
           actions.push({

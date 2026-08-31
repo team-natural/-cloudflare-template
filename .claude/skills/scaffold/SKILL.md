@@ -62,7 +62,7 @@ From these, work out:
 | `name` | Singular camelCase resource name (e.g. `category`) — matches the Service/validation file name |
 | `table` | The Drizzle export name in `packages/schema/src/schema.ts` (e.g. `categories`) — DEV-07's table name |
 | `externalKeyField` | The column used as the URL id. `publicId` if the table has one (DEV-07 §1's convention); otherwise the table's natural unique key (e.g. `slug` for `categories`/`tags`, which have no `public_id` — DEV-07 §4-3/§4-4) |
-| `fields` | Comma-separated client-writable columns for create/update. Exclude the external key, `id`, `status`/state column, `created_at`/`updated_at`, and any column set from the session (e.g. `author_id`) rather than the request body |
+| `fields` | Comma-separated columns the generated `create`/`update` input carries. Exclude the external key, `id`, `status`/state column, `created_at`/`updated_at`, and columns set from the session (e.g. `author_id`). **Include every other NOT NULL column that has no default, even when the client never sends it** — `media`'s `key`/`mime_type`/`size_bytes` are derived from the uploaded file, but `createMedia()` still has to insert them; leaving them out generates an INSERT missing required columns, which fails `pnpm check` |
 | `readRole` | `editor` or `admin` — who may list/read. DEV-02 §2-3 marks Inquiry list, AdminUser management, site settings and audit-log viewing as `editor: ✕`, so this is not always the same as `writeRole` |
 | `writeRole` | `editor` or `admin` — who may create/update/delete (DEV-02 §2-3) |
 | `hasTransitions` | Whether DEV-09 defines a state machine for this entity |
