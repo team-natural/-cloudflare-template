@@ -3,7 +3,7 @@ import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "driz
 
 // Generated from docs/3-development/07-database-schema.md (DEV-07) — that document is the
 // source of truth. Do not hand-edit table/column shapes here; update DEV-07 first, then
-// regenerate (`npm run db:generate`). Only the standard, always-present tables (DEV-07 §3-1
+// regenerate (`pnpm db:generate`). Only the standard, always-present tables (DEV-07 §3-1
 // through §3-3) are defined below — optional tables (members, orders, ai_jobs, etc.) are
 // adoption-gated per project and get added here only once a project actually adopts them.
 

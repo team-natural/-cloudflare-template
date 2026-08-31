@@ -143,6 +143,21 @@ design direction (`public-design`'s establishing run), its recurring values belo
 block in `global.css`. Either way the rule is the same — fix a token in the stylesheet, never per
 page (DEV-06 §6).
 
+### Comments
+
+Comment the **decision**, not the code. A comment earns its place only if it records something a
+reader cannot recover from the code itself — usually why an obvious-looking alternative was
+rejected, or which doc section (DEV-0x §y) the rule comes from. Two or three lines is normally
+enough; if a block is running past five, it is explaining rather than recording.
+
+Do not write: restatements of what the next line does, general web/security best practice, the
+history of how the code got here, or instructions already stated in `docs/` or a skill. This
+matters more than tidiness — long comments go stale silently. Every stale claim found in this
+repo so far was buried in a block long enough that nobody re-read it.
+
+When you change behaviour, re-read the comments around it in the same edit; a comment that now
+describes the old behaviour is worse than no comment.
+
 ## D1 / R2 / KV binding rules
 
 One D1 database and one R2 bucket per project, shared by both Workers. Binding names are fixed:

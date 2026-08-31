@@ -87,11 +87,8 @@ export default tseslint.config(
               message: "Pages / API routes must not query db directly — go through the service layer; only db/client.ts (createDb) may be imported (DEV-01 §5, DEV-05 §2)",
             },
             {
-              // The Drizzle schema lives in packages/schema (@app/schema). Pages/components
-              // must not import table defs directly and query around the service layer — this
-              // restores the DEV-05 §2 boundary that db-internal enforced before the schema moved
-              // to a package. Only services/db(client)/validation may import @app/schema. Revisit
-              // if a page-consumable package (shared UI/types) is ever added to packages/.
+              // Only services / db(client) / validation may import @app/schema. Revisit if a
+              // page-consumable package (shared UI or types) is ever added to packages/.
               from: {
                 element: { types: { anyOf: ["public-pages", "admin-pages", "public-components", "admin-components"] } },
               },

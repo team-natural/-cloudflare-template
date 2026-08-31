@@ -7,12 +7,7 @@ import { defineConfig } from "vitest/config";
 // than via `wrangler.configPath`, because wrangler.jsonc's `main` points at the Astro adapter
 // entrypoint, which unit tests do not need to build. Keep the binding names in sync with
 // apps/admin/wrangler.jsonc.
-//
-// The DEV-07 migrations are applied to the isolated test database by tests/apply-migrations.ts
-// through the TEST_MIGRATIONS binding. The template ships no migrations/ directory (it is a
-// derived artifact — see CLAUDE.md), so before the project has run `pnpm db:generate` there is
-// nothing to read and the Service-layer tests that need real tables will fail; the smoke test
-// still runs. Once generated, this picks them up automatically.
+// migrations/ may not exist yet; tests/apply-migrations.ts handles the empty case.
 const migrationsPath = path.join(import.meta.dirname, "../../packages/schema/migrations");
 
 export default defineConfig(async () => {

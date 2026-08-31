@@ -39,10 +39,12 @@ Translate the DEV-07 column table to Drizzle's `sqlite-core` API: `snake_case` D
 first argument, `camelCase` TS property names, indexes/unique constraints returned from the
 table's extra-config callback as an array — `(table) => [index(...), uniqueIndex(...)]`.
 
-`schema.ts` currently holds only the placeholder `adminUsers` table (see the TEMPLATE comment at
-the top of the file), so there is no established house style beyond the above yet — the first
-real table you add sets it. Factor out a shared `createdAt()` helper once a second table needs
-the same `strftime(...)` default, rather than repeating the expression.
+`schema.ts` already holds DEV-07 §3-1〜§3-3's standard tables (admin_users, admin_sessions,
+password_reset_tokens, categories, tags, posts, post_tags, media, inquiries, activity_log), so
+follow their house style rather than inventing one: the shared `createdAt()` helper for the
+`strftime(...)` default, `publicId` alongside the internal integer primary key, and the
+extra-config callback form above. Optional tables (members, orders, ai_jobs …) are adoption-gated
+and get added only when the project adopts them.
 
 | DEV-07 | Drizzle |
 | --- | --- |
