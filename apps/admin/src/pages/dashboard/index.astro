@@ -1,18 +1,12 @@
 ---
-// ADM-01 (PRD-04 §3-2) — the admin landing route, and the reference for how an admin PAGE
-// checks its session. API routes throw and let toErrorResponse() turn that into a 401
-// (see pages/api/v1/auth/me.ts); a page has to redirect to the login screen instead, because
-// a 401 body is not something a browser visitor can act on.
-//
-// There is no auth middleware by design (DEV-04 §2, src/middleware.ts) — every page and route
-// checks at the top of its own handler. Copy this block into each new admin page.
-//
-// TEMPLATE SCAFFOLD: intentionally minimal. The real dashboard (KPI cards, charts, recent
-// activity — PRD-04 §4-3-1) is built in step 3 of the docs/00_DEV_GUIDE.md §3 workflow with
-// the admin-design skill. What must survive that rebuild is the session guard below.
+// ADM-01 (PRD-04 §3-2) — admin landing route, and the reference for how a PAGE authenticates:
+// there is no auth middleware by design (DEV-04 §2), and unlike an API route a page redirects
+// rather than answering 401. Copy the guard below into every new admin page; the layout around
+// it is a scaffold that step 3 of docs/00_DEV_GUIDE.md §3 replaces.
+// Lives at dashboard/index.astro because that is what `pnpm generate pages` emits for /dashboard.
 import { env } from "cloudflare:workers";
-import Layout from "../layouts/Layout.astro";
-import LogoutButton from "../lib/components/logout-button.svelte";
+import Layout from "../../layouts/Layout.astro";
+import LogoutButton from "../../lib/components/logout-button.svelte";
 import { createDb } from "$lib/server/db/client";
 import { getSession } from "$lib/server/auth/session";
 import { getAdminUserByPublicId, toPublicAdminUser } from "$lib/server/services/admin-users";
@@ -21,9 +15,8 @@ const db = createDb(env.DB);
 const session = await getSession(Astro.cookies, db);
 if (!session) return Astro.redirect("/", 302);
 
+// getSession already joined admin_users, so a miss here means the row vanished mid-request.
 const row = await getAdminUserByPublicId(db, session.adminUserPublicId);
-// The session row joins admin_users, so a missing user here means the row vanished between the
-// two queries — treat it as logged out rather than rendering a page with no user.
 if (!row) return Astro.redirect("/", 302);
 const user = toPublicAdminUser(row);
 ---

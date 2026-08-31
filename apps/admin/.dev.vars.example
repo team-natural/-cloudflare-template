@@ -7,13 +7,20 @@
 # instead — and must be repeated in every env block, because `vars` is not inheritable.
 
 # --- Required ---
-# HMAC signing key for session ids and invite / password-reset tokens (Web Crypto — DEV-02 §1-1).
-# Generate with: openssl rand -base64 32
-SESSION_SIGNING_KEY=
+# Nothing here is required by the code that ships today: the auth backend reads only the
+# wrangler.jsonc `vars` (SESSION_TTL_DAYS, AUTH_LOCKOUT_*). The keys below are the ones a project
+# reaches for first; fill them in as the features that consume them land.
 
 APP_NAME=
 APP_URL=
 APP_ENV=development
+
+# --- Needed once invite / password-reset land (F-01-04, F-07-06 — not read by any code yet) ---
+# HMAC key for invite and password-reset tokens (Web Crypto `crypto.subtle.sign` — DEV-02 §1-1).
+# NOT used for session cookies: the session id is an unsigned 32-byte CSPRNG value validated by
+# the admin_sessions lookup, so leaving this empty does not weaken login.
+# Generate with: openssl rand -base64 32
+SESSION_SIGNING_KEY=
 
 # --- Mail (Resend — DEV-01 §1, DEV-10 §2). Required once inquiry notifications land (F-06-01/03).
 RESEND_API_KEY=

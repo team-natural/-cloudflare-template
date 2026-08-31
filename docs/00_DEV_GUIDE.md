@@ -246,12 +246,12 @@ git commit / git push                     → 人間がやる（AI は実行し�
 ```
 1 枚目（レイアウトを含む）:
   「admin-design スキルで apps/admin/src/pages/index.astro（ADM-00 ログイン）と
-    dashboard.astro（ADM-01）、Layout.astro を更新して。
+    dashboard/index.astro（ADM-01）、Layout.astro を更新して。
     PRD-04 §4-1 のサイドナビ + ヘッダー + コンテンツの 3 ペイン構成にして」
   → ここで作るレイアウトとサイドナビが以降の全画面の土台になる。ナビの行き先は
     §3-2 で生成済みなのでリンク切れにならない
   → ログインは API に結線済み（成功で /dashboard へ遷移）。作り込むのは見た目だけで、
-    dashboard.astro 冒頭のセッション検証と login-form.svelte のフォーム規約
+    dashboard/index.astro 冒頭のセッション検証と login-form.svelte のフォーム規約
     （DEV-06 §4-4）は消さずに残す — 以降の全画面がこれに倣う
 
 2 枚目以降:

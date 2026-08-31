@@ -33,4 +33,10 @@ jobs:
       - run: pnpm db:generate
       - run: pnpm test
 
+      # One install covers both apps (browsers cache per machine). The login-flow suite skips
+      # itself unless E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD are set — add them as secrets, plus a
+      # seed:admin step, to run it here too.
+      - run: pnpm --filter admin exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+
       - run: pnpm build

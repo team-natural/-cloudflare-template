@@ -53,7 +53,7 @@ apps/admin/src/
 │   │                             # ため、URL に admin を含める必要がない（DEV-01 §1）
 │   ├── index.astro              # ログイン（ADM-00。Confirmed — `/` 自体をログイン画面とし、
 │   │                             # `/login` への分離は行わない。§4-4 参照）
-│   └── （dashboard.astro / posts/ 等 — ADM-01〜、PRD-04 §3-2、Assumed。admin / editor 用。
+│   └── （dashboard/index.astro / posts/ 等 — ADM-01〜、PRD-04 §3-2、Assumed。admin / editor 用。
 │         src/layouts/Layout.astro を使用）
 ├── lib/
 │   ├── components/
@@ -160,7 +160,7 @@ PRD-04 §4 の標準構成に対応する。管理画面は shadcn-svelte のプ
      意図的に伏せている情報（アドレスの存在有無 — DEV-02 §7）をクライアント側で補わない。
   3. 送信ボタンは `onMount` まで `disabled` にする。アイランドは JS 実行前から DOM に存在するため、
      その間の送信はネイティブ POST になり入力が失われる。多重送信防止（送信中の `disabled`）も兼ねる。
-- ページ側のセッション検証は `apps/admin/src/pages/dashboard.astro` が参照実装。API ルートは
+- ページ側のセッション検証は `apps/admin/src/pages/dashboard/index.astro` が参照実装。API ルートは
   例外を投げて 401 を返すが、ページは**ログイン画面へリダイレクト**する（401 の本文は
   ブラウザ利用者が対処できない）。認証ミドルウェアは意図的に置かず、各ページ / ルートの先頭で
   検証する（DEV-04 §2）。

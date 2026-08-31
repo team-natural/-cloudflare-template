@@ -35,7 +35,7 @@ related-docs:
 
 | 経路 | 認証方式 | セッション / トークン保持 |
 | --- | --- | --- |
-| 管理画面（Web） | D1 の `admin_sessions` テーブル（DEV-07 §3-1）でセッションを管理し、`httpOnly` + `Secure` + `SameSite=Lax` 付き署名クッキー（クッキー名 `admin_session`）でセッション ID を保持する（クッキー属性の正本は本表。DEV-04 §2 はこれを参照する）。JWT は使わない（DEV-01 §2） | D1（`admin_sessions`）。ログアウト・強制失効は行削除で即時反映される |
+| 管理画面（Web） | D1 の `admin_sessions` テーブル（DEV-07 §3-1）でセッションを管理し、`httpOnly` + `Secure` + `SameSite=Lax` クッキー（クッキー名 `admin_session`）でセッション ID を保持する（クッキー属性の正本は本表。DEV-04 §2 はこれを参照する）。**クッキー値の署名は行わない**: セッション ID は 32 バイトの CSPRNG 値（`crypto.getRandomValues`）で、正当性は毎リクエストの `admin_sessions` 照合そのものが担保する。署名を足しても DB 照合を省けるわけではないため、鍵管理を増やさない判断（HMAC を使うのは下記の招待・リセットトークン）。JWT は使わない（DEV-01 §2） | D1（`admin_sessions`）。ログアウト・強制失効は行削除で即時反映される |
 | API（採用時） | 管理画面と同じ D1 セッション機構を使う（`admin_sessions` テーブルのセッション ID をクッキーまたは `Authorization` ヘッダで受け渡す）。`jose` による JWT 発行/検証は行わない（ステートレス API を主目的としないため。DEV-01 §2） | D1（`admin_sessions`）。未採用時は API 自体が対象外 |
 | メール認証 | **Open**（案件実装時に確定）。招待制の管理画面（admin が editor を追加する運用、F-01-04）では自己登録がないため本人確認（メール確認）自体が不要なことも多い。暫定方針: AdminUser は不要 [Assumed]、Member（FG-07）採用時に再検討。確定時は GOV-01 に記録する | 要否決定後に確定 |
 | パスワードリセット | 自前実装（`password_reset_tokens` テーブル、DEV-07 §3-1）。リセットリンクのトークンは Web Crypto の HMAC 署名（`crypto.subtle.sign`）で発行・検証する。`jose` は使わない（DEV-01 §2） | リンク 60 分有効 |
@@ -53,7 +53,7 @@ PRD-03 FG-07（会員登録・マイページ）採用時のみ有効。**AdminU
 | --- | --- | --- |
 | テーブル | `admin_users` / `admin_sessions` | `members` / `member_sessions`（DEV-07 §3-6・§4-10・§4-11 で定義済み。別テーブル、共有しない） |
 | クッキー名 | `admin_session` | `member_session`（AdminUser と異なる名前。同一クッキー名の使い回しは禁止） |
-| セッション実装 | D1 セッション + httpOnly 署名クッキー | 同じ技術（D1 セッション + httpOnly 署名クッキー）だが、**実装コードは別**（`apps/public/src/lib/server/` 配下に置き、`apps/admin` の AdminUser 用とは共有しない） |
+| セッション実装 | D1 セッション + httpOnly クッキー（値は無署名の CSPRNG トークン — §1-1） | 同じ技術（D1 セッション + httpOnly クッキー）だが、**実装コードは別**（`apps/public/src/lib/server/` 配下に置き、`apps/admin` の AdminUser 用とは共有しない） |
 | パスワードハッシュ | Web Crypto PBKDF2 | 同じ技術（Web Crypto PBKDF2）。ハッシュ関数自体の共通ヘルパー化は可だが、認証フロー・セッション管理コードは分離する |
 | 権限モデル | `admin` / `editor` の 2 階層（§2） | ロール階層なし。「ログイン済み Member か否か」のみを判定する単純な認可（PRD-01 §1-2）。マイページ・注文履歴（FG-07）は「本人の Member か」の所有者チェックのみで、ロール検証は不要 |
 | 招待・リセットトークン | Web Crypto HMAC 署名 | 同じ技術（Web Crypto HMAC 署名）。パスワード再設定（F-07-06）で使用 |

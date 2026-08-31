@@ -5,18 +5,15 @@
   import { Input } from "$lib/components/ui/input/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
 
-  // Where a successful login lands. `/` is the login screen itself (DEV-06 §4-4 — there is no
-  // separate /login route), so this must be a different route or the redirect loops straight
-  // back here. ADM-01 in PRD-04 §3-2 puts the admin landing at /dashboard. A fixed constant,
-  // not a `?next=` parameter: a redirect target taken from the URL is an open redirect.
+  // `/` is the login screen itself (DEV-06 §4-4), so success must land elsewhere or it loops.
+  // A constant, not a `?next=` parameter — that would be an open redirect.
   const LANDING_ROUTE = "/dashboard";
 
   let email = $state("");
   let password = $state("");
   let submitting = $state(false);
-  // The island is server-rendered, so the form exists in the DOM before its JS runs. Submitting
-  // in that window does a native POST to `/`, which has no POST handler — the input is silently
-  // lost. onMount fires only after hydration, so gating the submit button on it closes the gap.
+  // The island renders before its JS runs, and a submit in that window is a native POST to `/`
+  // that silently loses the input. Gate the button on onMount.
   let hydrated = $state(false);
   onMount(() => {
     hydrated = true;
@@ -42,8 +39,7 @@
       });
 
       if (response.ok) {
-        // The session cookie is set by the API (HttpOnly — deliberately unreadable from here).
-        // Use replace() so Back doesn't return to a login form that is already authenticated.
+        // replace() so Back doesn't return to an already-authenticated login form.
         window.location.replace(LANDING_ROUTE);
         return;
       }
@@ -56,15 +52,13 @@
       if (response.status === 422 && body?.errors) {
         fieldErrors = body.errors;
       } else {
-        // The API deliberately does not say whether the address exists (DEV-02 §7) — show its
-        // message as-is rather than adding detail the server withheld on purpose.
+        // Verbatim: the API withholds whether the address exists (DEV-02 §7).
         formError = body?.message ?? "ログインに失敗しました。時間をおいてやり直してください。";
       }
     } catch {
       formError = "サーバーに接続できませんでした。通信環境を確認してください。";
     } finally {
-      // Not reset on success: the page is navigating away, and re-enabling the button first
-      // would let a double-click fire a second login request.
+      // Unreached on success (navigating away) — re-enabling first would allow a double submit.
       submitting = false;
     }
   }
@@ -76,13 +70,9 @@
     <Card.Description>メールアドレスとパスワードを入力してください</Card.Description>
   </Card.Header>
   <Card.Content>
-    <!-- Browser validation (`required` below) stays on as the cheap first pass; the inline
-         errors here render what the server rejected, which is the check that actually
-         matters (lib/server/validation/auth.ts). -->
     <form onsubmit={handleSubmit}>
       <div class="flex flex-col gap-6">
         {#if formError}
-          <!-- role="alert" so screen readers announce it without moving focus (DEV-06 §4-4). -->
           <p role="alert" class="rounded-md border border-destructive/50 px-3 py-2 text-sm text-destructive">
             {formError}
           </p>

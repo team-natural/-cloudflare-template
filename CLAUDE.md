@@ -103,7 +103,7 @@ This is a pnpm workspace (`pnpm-workspace.yaml`) orchestrated by Turborepo (`tur
 lockout) plus the Post reference implementation that the `scaffold` generator mirrors. The login
 screen (`/`) is wired to that API and lands on `/dashboard` (ADM-01) on success; both screens are
 structural scaffolds — step 3 of the workflow designs them, and what must survive that rebuild is
-`dashboard.astro`'s session guard, which is the reference for how an admin *page* (as opposed to an
+`pages/dashboard/index.astro`'s session guard, which is the reference for how an admin *page* (as opposed to an
 API route) authenticates. `apps/public` ships one placeholder page. `packages/schema` ships DEV-07 §3-1〜§3-3's standard tables and no
 `migrations/` (see "D1 / R2 / KV binding rules"). The full tech-stack rationale (versions, why
 each library was chosen, what's still `Open`) lives in `docs/3-development/01-architecture-rules.md`
