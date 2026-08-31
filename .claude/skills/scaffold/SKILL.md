@@ -7,18 +7,52 @@ description: Generate a Service + Zod validation + API Route set for a resource,
 
 Stamps out the Service/validation/API-Route set demonstrated by the Post reference
 implementation (`apps/admin/src/lib/server/services/posts.ts`, `apps/admin/src/pages/api/v1/posts/`)
-for a new resource, via the `resource` Plop generator (`apps/admin/plopfile.mjs`, templates in
-`apps/admin/plop-templates/resource/`). Run the generator from inside `apps/admin`.
+for a new resource, via the `resource` Plop generator (`plopfile.mjs` at the repo root, templates in
+`plop-templates/resource/`). Run it from the repo root.
 
-> **Not available in the bare template.** None of the machinery above ships with this template:
-> `plop` is not a dependency, there is no `plopfile.mjs` or `plop-templates/`, and neither the
-> reference implementation nor `apps/admin/src/lib/server/` exists yet. All of it is created
-> during project bootstrap, once the project has real tables and its first Service. Until then,
-> stop and tell the user this skill has nothing to run — do not hand-write files pretending to be
-> generator output, and do not invent the Service-layer conventions; DEV-05 §1 owns those.
+> **`resource` cannot run in the bare template yet.** `plop`, `plopfile.mjs` and
+> `plop-templates/` do ship (at the repo root), and the `pages` generator below works today. But the `resource`
+> templates import `$lib/server/{db/client,http/*,auth/session,services/activity-log}`, and
+> neither those nor the Post reference implementation exist in `apps/admin/src/lib/server/` yet —
+> generated files would reference missing modules. Until that layer lands, stop and say so: do not
+> hand-write files pretending to be generator output, and do not invent the Service-layer
+> conventions; DEV-05 §1 owns those.
 
 **Precondition**: the target table must already exist in `packages/schema/src/schema.ts` (run the
 `schema-build` skill first if it doesn't — scaffold reads the table, it doesn't create it).
+
+## Page skeletons: the `pages` generator
+
+Run this **once, before any screen work starts**, so the whole route map for both apps exists
+before `admin-design`/`public-design` build screens one at a time. It takes no screen list: the
+generator reads `docs/2-product/04-ui-ux-design.md` (PRD-04) directly — §3-2 for admin (`ADM-*`)
+and §3-1 for public (`SCR-*`), using each row's **ルート** column — and stamps both apps in one
+run.
+
+```bash
+pnpm generate pages -- --includeOptional=false
+```
+
+- Run from the repo root. `plopfile.mjs` and `plop-templates/` live there — not inside an app —
+  because this generator writes into `apps/admin/src/pages/` **and** `apps/public/src/pages/`, and
+  the two apps must not reach into each other (DEV-01 §1). Same reason `eslint.config.js` is at the
+  root.
+- `--includeOptional=false` skips the adoption-gated screens PRD-04 marks in their 画面名
+  （軽量 EC / マイページ機能採用時 / 標準外）. Pass `true` once the project adopts those features —
+  it only adds the missing ones.
+- Routes map to files as `/` → `index.astro`, `/blog` → `blog/index.astro`, `/blog/[slug]` →
+  `blog/[slug].astro`, so a list route and its detail route coexist. A row naming several routes
+  (`` `/posts` · `/posts/[id]` ``) produces one file per route.
+- Existing files are skipped, never overwritten. Re-run after adding a screen to PRD-04 and only
+  the gaps get filled.
+
+Because the screen list is never retyped into a flag, the route map cannot drift away from PRD-04 —
+add the screen to the doc, re-run, done. **Add the ルート column entry to PRD-04 first** if a screen
+is missing one; the generator ignores rows without a route.
+
+What it emits is deliberately just route + layout + `<h1>` + a TODO pointing at the screen ID:
+**every layout and composition decision belongs to the design skills**, and pre-baking more here
+would only get rewritten.
 
 ## Step 1 — Gather the generator inputs
 
@@ -40,7 +74,7 @@ From these, work out:
 ## Step 2 — Run the generator
 
 ```bash
-npx plop resource -- --name=<name> --table=<table> --externalKeyField=<field> --fields=<csv> --writeRole=<role> --hasTransitions=<true|false> --statusField=<field-or-empty> --transitions=<csv-or-empty>
+pnpm generate resource -- --name=<name> --table=<table> --externalKeyField=<field> --fields=<csv> --writeRole=<role> --hasTransitions=<true|false> --statusField=<field-or-empty> --transitions=<csv-or-empty>
 ```
 
 All seven flags are required in this order-independent `--flag=value` form — Plop's CLI bypass

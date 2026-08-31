@@ -55,7 +55,7 @@ related-docs:
 | Webhook 署名キー | 同上 |
 | OAuth Client Secret | 同上 |
 
-コードからは `import { env } from "cloudflare:workers"` 経由で `env.XXX` としてアクセスする（`Cloudflare.Env` として `apps/admin/src/env.d.ts` で型付け。`Astro.locals.runtime.env` は v6 で削除済みの旧 API（採用する v7 にも無い） — CLAUDE.md 参照）。`config/services.php` のような設定集約ファイルは存在しない。
+コードからは `import { env } from "cloudflare:workers"` 経由で `env.XXX` としてアクセスする（型は `wrangler types` が生成する `worker-configuration.d.ts` の `Cloudflare.Env`。`Astro.locals.runtime.env` は v6 で削除済みの旧 API（採用する v7 にも無い） — CLAUDE.md 参照）。`config/services.php` のような設定集約ファイルは存在しない。
 
 ---
 

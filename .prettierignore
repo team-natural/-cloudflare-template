@@ -2,6 +2,7 @@
 .astro/
 .claude/
 .playwright-mcp/
+.pnpm-store/
 .turbo/
 .wrangler/
 *.md

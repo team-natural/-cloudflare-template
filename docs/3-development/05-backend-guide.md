@@ -54,8 +54,11 @@ apps/admin/src/
 │   │   ├── http/                    #   レスポンス整形・エラークラス・カーソルページネーション（DEV-04 §3・§4・§8）
 │   │   └── validation/              #   drizzle-zod で導出した Zod スキーマ（DEV-01 §2）
 │   └── hooks/                       # shadcn-svelte 用フック
-├── middleware.ts                    # セキュリティヘッダーのみ（確定。認証はここでは行わない — 下記参照）
-└── env.d.ts                         # Cloudflare bindings 型（Cloudflare.Env として DB / BUCKET / KV）
+└── middleware.ts                    # セキュリティヘッダーのみ（確定。認証はここでは行わない — 下記参照）
+
+# Cloudflare バインディングの型（`Cloudflare.Env` として DB / BUCKET / KV）は `wrangler types` が
+# 各アプリ直下に `worker-configuration.d.ts` を生成する（`pnpm typecheck` の第 1 段階）。gitignore
+# 済みの生成物なので、手書きの `env.d.ts` は作らない。
 
 packages/schema/
 ├── src/schema.ts                    # Drizzle スキーマ本体（DEV-07 から生成。apps/public・apps/admin 双方から参照される共有パッケージ）
@@ -70,7 +73,7 @@ apps/public/src/
 
 > **認証検証は各 API ルートハンドラの冒頭で行う**（DEV-04 §2、決定済み）。フレームワーク提供のミドルウェアスタックが無いため、`apps/admin/src/middleware.ts` に認証を集約しない — 同ファイルはセキュリティヘッダー専用（CLAUDE.md 参照）。各ルートは `requireSession(cookies, db)`（`apps/admin/src/lib/server/auth/session.ts`）を呼んでセッションを取得し、必要に応じて `requireRole(session, role)` を続けて呼ぶ。
 
-> Cloudflare バインディング（`env.DB` 等）は `Astro.locals.runtime.env` ではなく `import { env } from "cloudflare:workers"` で取得する（`Astro.locals.runtime.env` は Astro v6 で削除済みの旧 API であり、採用バージョンの v7 — DEV-01 §1 — にも存在しない。`apps/admin/src/env.d.ts` 参照）。
+> Cloudflare バインディング（`env.DB` 等）は `Astro.locals.runtime.env` ではなく `import { env } from "cloudflare:workers"` で取得する（`Astro.locals.runtime.env` は Astro v6 で削除済みの旧 API であり、採用バージョンの v7 — DEV-01 §1 — にも存在しない。型は `wrangler types` が生成する `worker-configuration.d.ts` の `Cloudflare.Env` を使う）。
 
 > **`apps/admin/src/lib/server/auth/` は AdminUser と Member で完全に分離する**（DEV-02 §1-1・§1-2）。2 リポジトリ構成（公開サイト + 管理サイト）から 1 リポジトリのモノレポ（`apps/public` + `apps/admin`、GOV-01 D-001）へ移行した後も、AdminUser 認証と Member 認証は同一コードベースに同居させない：AdminUser 認証は `apps/admin/src/lib/server/auth/` に置き、Member 認証（マイページ機能採用時）を `apps/public` 側に持たせる場合も汎用的な「auth」ヘルパー（両方の利用者種別を前提にした共通関数）を書かず、テーブル・クッキー名・セッション実装を分けたまま各アプリの `src/lib/server/auth/` に個別に実装する。
 

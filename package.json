@@ -10,6 +10,7 @@
     "check": "pnpm format:check && pnpm lint && turbo run typecheck",
     "typecheck": "turbo run typecheck",
     "lint": "eslint .",
+    "generate": "plop",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "turbo run db:generate --filter=@app/schema"
@@ -22,6 +23,7 @@
     "eslint-plugin-boundaries": "^7.2.0",
     "eslint-plugin-svelte": "^3.23.0",
     "globals": "^17.0.0",
+    "plop": "^4.0.5",
     "prettier": "^3.9.0",
     "prettier-plugin-astro": "^0.14.0",
     "prettier-plugin-svelte": "^4.1.0",
