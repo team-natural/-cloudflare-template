@@ -22,16 +22,21 @@ related-docs:
 
 ## ⚡ Quick Reference（まずここだけ覚える）
 
-**人間が明示的に行う操作は 2 つだけ。それ以外はすべて日本語で依頼するだけ。**
+**人間が明示的に打つコマンドは 4 つだけ。それ以外はすべて日本語で依頼する。**
 
 | 操作 | タイミング |
 | --- | --- |
-| `security-review` スキルを依頼 | リリース前・重要な機能変更後 |
-| `pnpm check` | コミット前・PR 作成前（Prettier + ESLint + 型チェックを一括実行。Turborepo が両アプリに fan out） |
+| `pnpm generate pages -- --includeOptional=false` | **フェーズ 2 で 1 回**。PRD-04 の全画面ぶんの Astro ページ雛形を両アプリに一括生成する（§3-2） |
+| `pnpm generate resource -- …` | フェーズ 2 で CRUD が必要なテーブルごとに 1 回（§3-2） |
+| `pnpm check` | コミット前・PR 作成前（`format:check` + `lint` + 型チェック。Turborepo が両アプリ + `packages/schema` に fan out） |
+| `pnpm test` | 機能を実装したら（Vitest。`packages/schema/migrations/` が未生成なら先に `pnpm db:generate`） |
+
+`security-review` スキルはリリース前・重要な機能変更後に日本語で依頼する。
 
 ```
 docs を書く／更新する                     → 日本語で依頼するだけ（コマンド不要）
 ページ実装                                → 「admin-design で〜」「public-design で〜」と画面種別を指定
+                                            （雛形は既にあるので、実際は「更新」になる — §3-3）
 MCP（ライブラリドキュメント検索・コード検索など）→ AI が自動で使う（意識不要）
 Skills（public-design / admin-design / shadcn-svelte 等）→ AI が自動でロード（意識不要）
 実装規約（CLAUDE.md）                     → AI が常時参照（意識不要）
@@ -39,7 +44,11 @@ hooks（整形・Lint・型チェック）            → 編集ごとに自動�
 git commit / git push                     → 人間がやる（AI は実行しない）
 ```
 
-> 専用の「コードレビュー用サブエージェント／コマンド」はこのテンプレートには無い（§4 参照）。PR 前の品質確認は `pnpm check` + 人間による確認で行う。
+> hooks が拾えない例外: Plop / shadcn-svelte の CLI は Claude の Edit/Write を経由せずファイルを書くため、
+> `PostToolUse` フックが走らない。ジェネレータを回した直後は `pnpm format` を手で実行する（§3-2）。
+
+> 専用の「コードレビュー用サブエージェント」はこのリポジトリには無い（§4 参照）。PR 前の品質確認は
+> `pnpm check` + `pnpm test` + 人間による確認で行う（Claude Code 本体の `code-review` は利用できる）。
 
 ---
 
@@ -48,10 +57,20 @@ git commit / git push                     → 人間がやる（AI は実行し�
 ```
 （リポジトリルート）― pnpm workspaces + Turborepo のモノレポ（DEV-01 §2、GOV-01 D-001）
 ├── apps/
-│   ├── public/             ← 公開サイト（独立した Cloudflare Worker。src/pages, src/components 等）
-│   └── admin/              ← 管理 CMS（独立した Cloudflare Worker。src/pages, src/lib/server 等 + plopfile.mjs）
+│   ├── public/             ← 公開サイト（独立した Cloudflare Worker。src/pages, src/components,
+│   │                          src/lib/server（お問い合わせ送信のみ）, tests/, playwright.config.ts）
+│   └── admin/              ← 管理 CMS（独立した Cloudflare Worker。src/pages, src/lib/server,
+│                              scripts/seed-admin.mjs, tests/, vitest.config.ts, playwright.config.ts）
 ├── packages/
-│   └── schema/             ← Drizzle スキーマ正本（src/schema.ts）+ migrations/（apps/admin からのみ適用）
+│   └── schema/             ← Drizzle スキーマ正本（src/schema.ts, src/ulid.ts）。migrations/ は
+│                              テンプレートに同梱しない生成物 — 初回 pnpm db:generate で作られる
+│
+├── plopfile.mjs             ← コード生成の定義（pages / resource）。両アプリに書き込むため
+├── plop-templates/          ← ルートに置く（apps/* は互いの内部に書き込まない — DEV-01 §1）
+│   ├── page/                ← Astro ページ雛形
+│   └── resource/            ← Service / Zod / API ルート雛形
+├── eslint.config.js          ← レイヤー境界の機械検証（eslint-plugin-boundaries）
+├── .github/workflows/ci.yml  ← dev / main 宛の PR・push で check → test → build（GOV-01 D-002）
 │
 ├── docs/                   ← プロジェクト仕様書（何を作るか。人間が読む）
 │   ├── 00_INTAKE.md        ← ヒアリング情報の起点（全文書の入力源）
@@ -68,6 +87,7 @@ git commit / git push                     → 人間がやる（AI は実行し�
 │   │   ├── admin-design/ public-design/     ← 画面種別ごとの実装チェーンの起点
 │   │   ├── shadcn-svelte/                   ← 管理画面 UI コンポーネントの追加・調整
 │   │   ├── schema-build/                    ← DEV-07 → Drizzle スキーマ → migration 生成
+│   │   ├── scaffold/                        ← pnpm generate pages / resource の使い方
 │   │   └── （デザインチェーン内部スキル: frontend-design / baseline-ui /
 │   │         fixing-accessibility / fixing-motion-performance /
 │   │         web-design-guidelines / design-review）
@@ -81,7 +101,7 @@ git commit / git push                     → 人間がやる（AI は実行し�
 - **`apps/public`（公開サイト）と `apps/admin`（管理 CMS）は独立した Cloudflare Worker として別々にデプロイする**（`/admin` パスへの統合ではない）。ESLint（`eslint-plugin-boundaries`、ルートの `eslint.config.js`）が両者の相互 import と `packages/*` から `apps/*` への import を禁止する（DEV-01 §1・§5）。`packages/config` / `packages/ui` は検討の上で見送っている（DEV-01 §1 参照）
 - **技術スタックの正本は `docs/3-development/01-architecture-rules.md`（DEV-01）**。AI が技術判断に迷ったら必ずここに従う。
 - **実装規約の正本は `CLAUDE.md`**。複数ファイルに分割せず 1 ファイルに集約している（§5 参照）。
-- 生成系は `schema-build`（DEV-07 → Drizzle スキーマ → migration）と `scaffold`（Service / Zod バリデーション / API ルートの雛形。Astro ページは対象外 — デザイン判断を伴うため `admin-design`/`public-design` が担当）の 2 つ。専用サブエージェントは無い（§4 参照）。
+- 生成系は `schema-build`（DEV-07 → Drizzle スキーマ → migration）と `scaffold`（`pnpm generate pages` で全画面の Astro ページ雛形、`pnpm generate resource` で Service / Zod / API ルートの雛形）の 2 つ。専用サブエージェントは無い（§4 参照）。
 - **Memory（長期記憶）**: AI の会話をまたいだ記憶はユーザー領域に自動保存される。「〇〇を覚えておいて」と指示すると次回以降も参照される。
 
 ---
@@ -100,26 +120,33 @@ git commit / git push                     → 人間がやる（AI は実行し�
 
 ## 3. 開発フロー（INTAKE → リリースまで）
 
-### 3-0. フェーズ×使用アセット一覧（この表が全体の前提）
+### 3-0. ステップ×使用アセット一覧（この表が全体の前提）
 
-開発は 4 フェーズで進む。各フェーズで使うスキル・ツールは以下の通り:
+開発は 6 ステップで進む。**UI を先に全画面ぶん作り、機能は後からまとめて入れる**（縦に 1 ページずつ
+完成させるのではなく、横に揃えてから深くする）。理由は §3-3 冒頭を参照。
 
-| フェーズ | 工程 | 使うもの | 種別 |
+| ステップ | 工程 | 使うもの | 種別 |
 | --- | --- | --- | --- |
-| **設計** | 00_INTAKE.md 記入 | 人間 | — |
-|  | docs 一式生成（BIZ → PRD → DEV） | 会話で依頼（§3-1 の順序表） | — |
+| **1. docs 更新** | 00_INTAKE.md 記入 | 人間（AI は追記提案のみ — §2） | — |
+|  | docs 一式生成（BIZ → PRD → DEV → OPS → GOV-01 承認） | 会話で依頼（順序は 00_README §9 が正本、対応表は §3-1） | — |
 |  | レビュー・確定 | 人間（ステータスラベル運用） | — |
-| **基盤** | DEV-07 の物理テーブル設計 → Drizzle スキーマ生成 → `drizzle-kit generate` → `wrangler d1 migrations apply` | `schema-build` スキル（実装済み。DEV-07 → `packages/schema/src/schema.ts` → `pnpm db:generate`）+ 適用は人間（`apps/admin` からのみ実行） | — |
-|  | Service / API ルートの雛形一括生成（DEV-07/DEV-09 が既に確定しているリソース） | `scaffold` スキル（スキル本体のみ現存。Plop 一式・参照実装は案件 bootstrap 時に作成 — DEV-01 §1。Astro ページは対象外） | — |
-| **実装** | 管理画面の実装（shadcn-svelte 標準パターン） | `admin-design` | スキル |
-| （ページ単位で反復） | 公開側の実装（オリジナルデザイン 6 段チェーン） | `public-design` | スキル |
-|  | バックエンド（`scaffold` が生成した雛形の穴埋め・生成対象外の実装） | 人間 + AI に日本語で依頼（専用サブエージェントは未導入 — Open） | — |
-|  | 機能ごとのテスト作成 | Vitest + Playwright（DEV-01 §1、導入済み — `pnpm test` / `pnpm test:e2e`） | — |
+| **2. 基盤を揃える** | 全体構造の設計（どのテーブル・どの画面・どのルートにするか docs から確定させる） | 会話で依頼 | — |
+|  | DEV-07 の物理テーブル設計 → Drizzle スキーマ → migration 生成 → 適用 | `schema-build` スキル + `pnpm db:generate` + `pnpm --filter admin db:migrate` | スキル |
+|  | **全画面の Astro ページ雛形を一括生成**（両アプリぶん、1 コマンド） | `pnpm generate pages`（PRD-04 の「ルート」列を直読み） | ツール |
+|  | Service / Zod / API ルートの雛形生成（CRUD が必要なテーブルごと） | `scaffold` スキル → `pnpm generate resource` | スキル |
+| **3. 管理画面 UI** | 1 枚目（`/` とレイアウト）を作り、以降はそれに倣う | `admin-design`（雛形を**更新**する — §3-3） | スキル |
+| **4. 公開画面 UI** | 1 枚目（`/` とレイアウト）を作り、以降はそれに倣う | `public-design`（雛形を**更新**する — §3-3） | スキル |
+| **5. 機能実装** | 優先順位を付けて各ページの機能を入れる | 会話で依頼（優先度の出典は PRD-03 の MVP / 優先度列） | — |
 |  | 整形・Lint・型チェック（編集ごと自動） | hooks（`format-and-check.sh`） | 自動 |
-| **検証** | コードレビュー | `pnpm check` + 人間レビュー（専用 reviewer エージェント/コマンドは未導入 — Open） | — |
+| **6. テスト・検証** | ユニット / E2E | `pnpm test` / `pnpm test:e2e`（Vitest + Playwright、導入済み） | — |
+|  | コードレビュー | `pnpm check` + 人間レビュー（Claude Code 本体の `code-review` も利用可） | — |
 |  | セキュリティレビュー（リリース前必須） | `security-review` スキル | スキル |
 |  | 全画面の最終ビジュアルスイープ | `design-review` | スキル |
-|  | Cloudflare Workers へのデプロイ | `dev` / `main` へのマージで Cloudflare Workers Builds が自動実行（DEV-08 §3、GOV-01 D-002）。手動実行は `wrangler deploy` | — |
+|  | 完了ゲート・デプロイ | DEV-08 §7 の検証完了ゲート → `dev` / `main` へのマージで Cloudflare Workers Builds が自動実行（DEV-08 §3、GOV-01 D-002） | — |
+
+> テストを書くタイミングは**ステップ 5 と 6 のどちらでもよい**。機能ごとに書けば手戻りが小さく、
+> ステップ 6 でまとめて書けば仕様が固まってから書ける。どちらにせよ DEV-03 §2 の DoD と
+> DEV-08 §7 の完了ゲートは通す。
 
 - 公開側 6 段チェーンの内訳: `frontend-design` → `baseline-ui` → `fixing-accessibility` →
   `fixing-motion-performance` → `web-design-guidelines` → `design-review`（`public-design` が起点。
@@ -129,23 +156,8 @@ git commit / git push                     → 人間がやる（AI は実行し�
 
 ### 3-1. 文書生成の流れと各ステップ
 
-```
-00_INTAKE.md（人間が記入）
-    ↓
-BIZ-01 → BIZ-02 → BIZ-03
-    ↓
-PRD-01 → PRD-02 → PRD-03 →（AI機能あり時: PRD-05）→ PRD-04
-    ↓
-DEV 文書群（DEV-07 物理DB設計 が実装の起点）
-    ↓
-DEV-07 → Drizzle スキーマ生成 → drizzle-kit generate → migrations/ → wrangler d1 migrations apply
-    ↓                                                     ← schema-build スキル（実装済み）
-Service / Zod バリデーション / API Route を Plop で雛形生成 ← scaffold スキル（スキル本体のみ現存。Plop 一式は案件 bootstrap 時に作成。Astro ページは対象外）
-    ↓
-ページ単位で実装（管理画面: admin-design / 公開側: public-design）
-    ↓
-検証（pnpm check → 人間レビュー → security-review）
-```
+**文書の依存関係図は `00_README.md` §9 が唯一の正本**（同 §9 が「複数の図で二重管理しない」と定めて
+いる）。本書は下表で「何を読んで何を書くか」だけを扱う。
 
 各文書の生成は「〇〇（入力文書）を参照して △△（対象文書）を書いて」と依頼するだけ。入力文書と確認ポイント:
 
@@ -160,6 +172,11 @@ Service / Zod バリデーション / API Route を Plop で雛形生成 ← sca
 | 7 | PRD-03 | PRD-01/02 + BIZ-01〜03 | 状態遷移・ビジネスルール。状態の列挙値を確定 |
 | 8 | PRD-04 / PRD-05（採用時） | PRD-03 | 画面構成 / AI 機能の採否判定ゲート |
 | 9 | DEV 文書群 | PRD 群 + DEV-01 | 技術判断はすべて DEV-01 に従っているか |
+| 10 | OPS-01 / OPS-02 | BIZ-03 + PRD 群 + DEV-08 | 契約・SLA と運用手順が、実際のデプロイ構成（DEV-08）と矛盾しないか |
+| 11 | GOV-01 で正仕様を承認 | 全文書 | `Open` / `Assumed` が残っていないか。残す場合は GOV-02 に論点として立てる |
+
+> ステップ 10-11 まで通してから実装（ステップ 2）に入る。GOV-01 の承認が「docs 確定」の区切りで、
+> 00_README §9 の図でも `OPS → GOV-01 正仕様承認 → 実装着手` がその順に描かれている。
 
 **ドキュメントステータスの扱い**
 
@@ -169,7 +186,7 @@ Service / Zod バリデーション / API Route を Plop で雛形生成 ← sca
 | `draft-ai` / `[Assumed]` | 実装前に人間が確認・承認する |
 | `[Open]` | 未決定。実装しない |
 
-### 3-2. DB 設計 → マイグレーション
+### 3-2. 基盤を揃える（ステップ 2: DB → 全画面の雛形 → Service/API の雛形）
 
 ```
 1. DB 設計前に [Assumed] / [Open] をゼロにする
@@ -185,55 +202,113 @@ Service / Zod バリデーション / API Route を Plop で雛形生成 ← sca
    → migration は `apps/admin` からのみ実行する（同一リポジトリ内の app 単位の所有権。DEV-01 / CLAUDE.md の D1/R2 バインディングルール参照）
 
 4. 適用
-   ! npx wrangler d1 migrations apply <DB名> --local   # apps/admin で実行
-   → 本番反映は OPS 側の手順に従う。down() の自動生成は無いため、ロールバックが必要な変更は
-     新しい migration で対応する（forward-only）
+   ! pnpm --filter admin db:migrate          # = wrangler d1 migrations apply DB --local
+   → 本番反映は OPS 側の手順に従う（`db:migrate:remote`）。down() の自動生成は無いため、
+     ロールバックが必要な変更は新しい migration で対応する（forward-only）
 
-5. ページ / API Route / Service の作成
-   → ルート表・ファイル構成を一括生成するツールはこのテンプレートに未導入（Open / future work）。
-     PRD-04 の画面一覧を見ながら、公開ページは `apps/public/src/pages/**/*.astro`、
-     管理側の API Route / Service は `apps/admin/src/pages/api/**/*.ts`・
-     `apps/admin/src/lib/server/services/` を画面/機能単位で都度作成する
-   → 「PRD-04 の画面一覧から、必要な Astro ページと API Route の一覧を出して」と依頼して
-     洗い出してから着手すると漏れが減る
+5. 全画面の Astro ページ雛形を一括生成
+   ! pnpm generate pages -- --includeOptional=false
+   → PRD-04 §3-1（公開 `SCR-*`）/ §3-2（管理 `ADM-*`）の「ルート」列を直読みし、
+     apps/admin と apps/public の**両方**を 1 コマンドで生成する
+   → 前提: 対象行に「ルート」列が入っていること。無いとジェネレータがエラーで停止する
+     （画面を追加したら PRD-04 に 1 行足して再実行すれば、差分だけ埋まる）
+   → 軽量 EC / マイページ / 標準外の画面は既定でスキップ。採用したら `--includeOptional=true`
+   → 既存ファイルは絶対に上書きしない（`skipIfExists`）
+
+6. Service / Zod バリデーション / API Route の雛形を生成（CRUD が必要なテーブルごと）
+   → まず対象を洗い出す。「DEV-07 の標準テーブルのうち、CRUD API が必要で Service が未実装の
+     ものを列挙して」と依頼する。セッション・中間テーブル等は対象外
+   ! pnpm generate resource -- --name=… --table=… --readRole=… --writeRole=… …
+   → 引数は `scaffold` スキルが DEV-07 / DEV-09 / DEV-02 §2-3 から組み立てる。
+     read と write でロールが違うリソースがある（Inquiry 一覧は `editor: ✕`）ので `readRole` を必ず判断する
+
+7. ジェネレータの出力を整形・型チェック
+   ! pnpm format && pnpm check
+   → Plop は Claude の Edit/Write を経由しないため hooks が走らない。ここは手で実行する
 ```
 
-### 3-3. 実装（バックエンド / フロントエンド / テスト）
+> ステップ 5-7 を終えた時点で「全ページの雛形 + DB + Service/API の雛形」が揃う。ここから先の
+> ステップ 3-4（UI）は**新規作成ではなく雛形の更新**になる。
 
-ページ単位で中身を作っていく。画面種別でスキルを指定する:
+### 3-3. 実装（ステップ 3-5: 管理画面 UI → 公開画面 UI → 機能）
+
+§3-2 で全画面の雛形が生成済みなので、ここは**新規作成ではなく雛形の更新**になる。そして
+**UI（ステップ 3-4）を全画面ぶん先に揃えてから、機能（ステップ 5）を入れる**。
+
+先に UI を揃える理由は 2 つある。1 つは相互リンク — 一覧 → 詳細、パンくず、管理画面のサイドナビ
+（PRD-04 §4-1）は全ルートが存在していないと一度で正しく書けず、後から直す手戻りが出る。もう 1 つは
+一貫性 — `admin-design` は「最も近い既存画面に倣う」方式なので、1 枚目の出来が以降すべてに伝播する。
+
+**ステップ 3: 管理画面 UI**
 
 ```
-管理画面:「admin-design スキルでメンバー一覧画面を実装して」
-  → shadcn-svelte の既存パターン（CLAUDE.md）に準拠して実装
-    → fixing-accessibility → design-review（実ブラウザ検証）まで自動でチェーン
+1 枚目（レイアウトを含む）:
+  「admin-design スキルで apps/admin/src/pages/index.astro と Layout.astro を更新して。
+    PRD-04 §4-1 のサイドナビ + ヘッダー + コンテンツの 3 ペイン構成にして」
+  → ここで作るレイアウトとサイドナビが以降の全画面の土台になる。ナビの行き先は
+    §3-2 で生成済みなのでリンク切れにならない
 
-公開側:「public-design スキルでトップページを作って。ブリーフ: ...」
-  → frontend-design（デザイン方向）→ baseline-ui → fixing-accessibility
+2 枚目以降:
+  「admin-design スキルで /posts の一覧画面を更新して。1 枚目の構成に倣って」
+  → shadcn-svelte の既存パターン（CLAUDE.md）に準拠 → fixing-accessibility
+    → design-review（実ブラウザ検証）まで自動でチェーン
+```
+
+**ステップ 4: 公開画面 UI**
+
+```
+1 枚目（レイアウトを含む）:
+  「public-design スキルで apps/public/src/pages/index.astro と Layout.astro を更新して。
+    ブリーフ: ...」
+  → frontend-design（デザイン方向の決定）→ baseline-ui → fixing-accessibility
     → fixing-motion-performance → web-design-guidelines → design-review の 6 段チェーン
-  → LP / トップ / 料金はフルチェーン、認証画面などの単純ページは短縮（AI が判断して申告）
 
-バックエンド:「PRD-03 §2 の記事（Post）公開機能を実装して」
+2 枚目以降:
+  「/blog の一覧画面を、トップページで決めたデザイン方向に倣って更新して」
+  → **2 枚目以降で public-design のフルチェーンを回さない。** Step 1 の frontend-design は
+    毎回デザイン方向を再決定するため、ページごとに見た目がばらつく。方向は 1 枚目で確定させ、
+    以降は baseline-ui / fixing-accessibility 等を個別に使う
+```
+
+**ステップ 5: 機能実装**
+
+```
+優先順位: PRD-03 の MVP 列と優先度列（High / Medium）が着手順の出典。
+  「PRD-03 の MVP かつ優先度 High の機能を、着手順に並べて」と依頼して確定させる
+
+「PRD-03 §2 の記事（Post）公開機能を実装して」
   → CLAUDE.md のレイヤー原則（Astro Page/API Route → Service → D1、DEV-01 §5 参照）に従い実装
-    認可チェック（admin / editor のロール検証）は Service / D1 アクセス層で必ず強制（DEV-01 §4）
-  → 専用のバックエンド実装エージェントは未導入（Open）。日本語で直接依頼する
+    認可チェック（admin / editor のロール検証）は Service 層で必ず強制（DEV-01 §4）
+  → §3-2 で生成した雛形の穴埋めが中心。生成物が埋めていない箇所は
+    `.claude/skills/scaffold/SKILL.md` の Step 4 に一覧がある
+  → 管理画面のログインは 1 枚目の作業に含める（バックエンドは実装済み、UI からの結線が残っている）
 
-テスト: Vitest（unit）+ Playwright（e2e）に確定済み（DEV-01 §1）
-  → 導入後は、検証フェーズまで溜めずに機能完成ごとに書く運用にする
+テスト: 機能ごとに書いてもステップ 6 でまとめて書いてもよい（§3-0 の注記）
+  ! pnpm test        # migrations/ が未生成なら先に pnpm db:generate
 ```
 
 > コード変更のたびに hooks（`format-and-check.sh`）が Prettier → `eslint --fix` → `pnpm typecheck`
-> を自動実行し、エラーは AI に自動フィードバックされます。手動で実行する必要はありません
-> （コミット前・PR 前の最終確認には `pnpm check` を使う）。
+> を自動実行し、エラーは AI に自動フィードバックされる。**例外はジェネレータの出力**（Plop /
+> shadcn-svelte CLI は Claude の Edit/Write を経由しないため hooks が走らない）— その直後だけ
+> `pnpm format` を手で実行する。コミット前・PR 前の最終確認には `pnpm check` を使う。
 
-### 3-3b. 検証フェーズ（リリース前）
+### 3-3b. 検証（ステップ 6: リリース前）
 
 ```
 1. 型チェック・Lint・整形の最終確認: ! pnpm check
-2. 「変更内容をレビューして」と人間目線のセルフレビューを依頼
-   （専用 reviewer エージェント/コマンドは未導入 — Open）
-3. security-review スキルで「変更内容のセキュリティレビューをして」と依頼   ← リリース前・重要な変更後
-4. 画面が絡む変更は design-review スキルで最終ビジュアルスイープ
+2. テスト: ! pnpm test        # migrations/ が未生成なら先に pnpm db:generate
+             ! pnpm test:e2e    # Playwright。spec が 0 件なら何も検証されない点に注意
+3. 「変更内容をレビューして」と人間目線のセルフレビューを依頼
+   （このリポジトリ専用の reviewer スキルは無い。Claude Code 本体の code-review が使える）
+4. security-review スキルで「変更内容のセキュリティレビューをして」と依頼   ← リリース前・重要な変更後
+5. 画面が絡む変更は design-review スキルで最終ビジュアルスイープ
+6. 完了ゲート: DEV-08 §7 の検証完了ゲートと DEV-03 §2 の DoD を通す
 ```
+
+> CI（`.github/workflows/ci.yml`）が `dev` / `main` 宛の PR と push で
+> `pnpm check` → `pnpm db:generate` → `pnpm test` → `pnpm build` を回す（GOV-01 D-002）。
+> `db:generate` を挟むのは、テンプレートが `migrations/` を同梱しないため（案件では差分なしで
+> 終わり、スキーマのドリフト検出も兼ねる）。E2E は CI では実行していない。
 
 ### 3-4. コミット・プッシュ手順
 
@@ -267,7 +342,7 @@ Service / Zod バリデーション / API Route を Plop で雛形生成 ← sca
 ### このテンプレートに無いもの
 
 - **専用サブエージェント**（backend / frontend / reviewer / security-audit / test-writer 相当）。バックエンド実装もコードレビューも日本語で直接依頼する
-- **Astro ページのスケルトン生成**。デザイン判断を伴うため `admin-design` / `public-design` が担当する（`scaffold` はバックエンド層のみ）
+- **デザイン判断を含むページ生成**。`pnpm generate pages` が作るのはルート + Layout + 見出しだけで、レイアウト構成は `admin-design` / `public-design` が担当する
 
 追加する場合は GOV-01 で決定した上で本書と DEV-01 を更新すること。架空のツール名を書かない。
 

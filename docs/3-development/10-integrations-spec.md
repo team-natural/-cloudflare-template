@@ -183,8 +183,12 @@ MAIL_FROM_ADDRESS=noreply@example.com
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
+> **`lib/server/mail/` はテンプレートに未同梱**（`resend` も依存に入っていない）。以下は案件で
+> 実装する際の雛形であり、実在するファイルの引用ではない。お問い合わせ通知（F-06-01）と
+> 自動返信（F-06-03）を使う時点で `pnpm --filter admin add resend` から始める。
+
 ```typescript
-// apps/admin/src/lib/server/mail/client.ts
+// apps/admin/src/lib/server/mail/client.ts（案件で作成する）
 import { Resend } from "resend";
 
 export function createResendClient(env: Env): Resend {
@@ -221,7 +225,7 @@ await sendInquiryReceivedEmail(env, inquiry);
 ```
 
 ```typescript
-// apps/admin/src/lib/server/mail/inquiries.ts
+// apps/admin/src/lib/server/mail/inquiries.ts（案件で作成する）
 import { createResendClient } from "./client";
 
 export async function sendInquiryReceivedEmail(env: Env, inquiry: Inquiry): Promise<void> {

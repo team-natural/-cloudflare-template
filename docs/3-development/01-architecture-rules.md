@@ -48,7 +48,7 @@ related-docs:
 | ファイルストレージ | Cloudflare R2 | バインディング名は必ず `BUCKET` |
 | Cache / Queue | Cloudflare KV 採用・Queues 不採用（`Confirmed`） | KV は認証エンドポイントの失敗回数カウンタ（DEV-02 §7）とメンテナンスモードフラグ（OPS-02 §3-3/§3-5)用。Queues はコンテンツ主体サイトには過剰なため不採用（§3）— 必要が生じたら新規 GOV-01 決定で追加。Session は本書 §2「API 提供（認証）」で決定済み（D1 ベース） |
 | Mail | Resend（`resend` npm パッケージ、fetch ベースの公式 SDK） | プロジェクト開始時に導入。Node 専用 SDK は Workers で動かないことがあるため、fetch ベースで動作するものを選ぶ |
-| Testing | Vitest + Playwright（`Confirmed` — ただし本テンプレートには未導入。案件 bootstrap 時に入れる） | Unit / Feature = Vitest（Workers 実行環境は `@cloudflare/vitest-pool-workers` で再現）、E2E = Playwright。Architecture テスト（レイヤー境界）は下記 Static Analysis（`eslint-plugin-boundaries`）が担う。テスト戦略の詳細は DEV-03 §4 |
+| Testing | Vitest + Playwright（`Confirmed`・導入済み） | Unit / Feature = Vitest（Workers 実行環境は `@cloudflare/vitest-plugin` で再現。旧称 `@cloudflare/vitest-pool-workers` から改名済み）、E2E = Playwright（両アプリに `playwright.config.ts`。spec のサンプルは未同梱）。`pnpm test` / `pnpm test:e2e`。Architecture テスト（レイヤー境界）は下記 Static Analysis（`eslint-plugin-boundaries`）が担う。テスト戦略の詳細は DEV-03 §4 |
 | Formatter | Prettier | `prettier-plugin-astro` / `prettier-plugin-svelte` / `prettier-plugin-tailwindcss`（Tailwind クラス順の自動統一）。`printWidth: 9999`（自動折り返しなし） |
 | Lint | ESLint（flat config） | `eslint-plugin-astro` / `eslint-plugin-svelte` / `typescript-eslint` |
 | 型チェック | `wrangler types` → `astro check` → `svelte-check` | `pnpm typecheck` として一括実行（Turborepo が両アプリに fan out）。`tsc --noEmit` 単体では `.astro` / `.svelte` を解析できないため必須 |
@@ -216,7 +216,7 @@ Request → Astro API Route (apps/admin/src/pages/api/**/*.ts) → Service → D
 - 現存: `.claude/skills/`（`public-design` / `admin-design` / `shadcn-svelte` / `fixing-accessibility` 等、実装時のワークフロー）
 - 現存: `.agents/skills/shadcn-svelte/rules/`（コンポーネント構成・フォーム・スタイリング・アイコンの規約。ベンダー管理のため直接編集しない）
 - 実装済み: `schema-build` スキル（DEV-07 → Drizzle スキーマ → migration の生成、`.claude/skills/schema-build/`）
-- スキル本体のみ現存（Plop 一式・参照実装は未整備。案件 bootstrap 時に作成 — 本書 §1 参照）: `scaffold` スキル（DEV-07/DEV-09 → Service/Zod バリデーション/API ルート雛形の生成、`.claude/skills/scaffold/`。Astro ページ生成は対象外）
+- 実装済み: `scaffold` スキル（`.claude/skills/scaffold/`）+ ルートの `plopfile.mjs` / `plop-templates/`。`pnpm generate pages` が PRD-04 の全画面ぶんの Astro ページ雛形を両アプリに一括生成し、`pnpm generate resource` が DEV-07/DEV-09 から Service / Zod バリデーション / API ルートの雛形を生成する（レイアウト構成の判断は `admin-design`/`public-design` の担当）
 
 ---
 

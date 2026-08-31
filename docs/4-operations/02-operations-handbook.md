@@ -145,14 +145,14 @@ related-docs:
 
 ## 3. リリース・ロールバック実作業（旧 OPS-04 相当）
 
-デプロイ基盤・環境構成・CI/CD・デプロイゲートは DEV-08 §1〜§6 を参照。デプロイの起動方法（CI 経由か手動か）は **DEV-08 §3 の通り Open**（案件実装時に確定。`.github/` 未設置、CI/CD 基盤自体が未導入）。本章は `wrangler deploy` によるデプロイ実行を前提に、人間が行う確認作業とロールバック実作業のみを定義する。
+デプロイ基盤・環境構成・CI/CD・デプロイゲートは DEV-08 §1〜§6 を参照。デプロイの起動方法は **GOV-01 D-002 で確定済み**: 検査（CI）は GitHub Actions（`.github/workflows/ci.yml`）、デプロイ（CD）は Cloudflare Workers Builds の GitHub 連携（`dev` → staging / `main` → production）。本章は自動デプロイと手動 `wrangler deploy` の双方を前提に、人間が行う確認作業とロールバック実作業のみを定義する。
 
 ### 3-1. 通常リリース手順
 
 ```
 1) リリース対象 PR を集約し、CI（`pnpm check` = フォーマット / Lint / 型チェック、全テスト。Turborepo で
    `apps/public`・`apps/admin` それぞれに対して実行される）全 Pass を確認
-   （CI 基盤自体は DEV-08 §3 の通り Open。未導入の間はマージ担当者がローカルで `pnpm check` を実行して確認する）
+   （CI は導入済み — `.github/workflows/ci.yml` が `dev` / `main` 宛の PR・push で `pnpm check` → `pnpm db:generate` → `pnpm test` → `pnpm build` を実行する。GOV-01 D-002）
 2) リリースノート（GitHub Release Draft）を作成
 3) main へ PR 経由でマージ → `wrangler deploy` を実行（CI 経由 or 手動、DEV-08 §3 参照）。
    Cloudflare Workers のデプロイはエッジでアトミックに切り替わるため無停止

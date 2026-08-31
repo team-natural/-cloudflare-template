@@ -148,10 +148,11 @@ PRD-04 §4 の標準構成に対応する。管理画面は shadcn-svelte のプ
 - 削除等の危険操作は視覚的に区別し（警告色 + 枠）、確認ダイアログを必須とする。
 - 参考実装: `apps/admin/src/pages/index.astro` + `apps/admin/src/lib/components/login-form.svelte`（Card +
   Input + Label + Button の組み合わせ）。**これはコンポーネント構成の見本であり、UI のみ**（送信ハンドラは
-  `preventDefault` のみで API に結線されていない）。本テンプレートの時点ではバックエンド側
-  （`POST /api/v1/auth/login`、セッション発行、ロックアウト）も未実装（DEV-05 参照）。案件側の作業は
-  ①バックエンドの実装 ②フォームから API への結線 ③ログイン後の遷移先＝管理画面ランディングの設計 の
-  3 点。`/` 自体がログイン画面であり `/login` への分離は行わないため、ログイン成功後は明示的に別ルート
+  `preventDefault` のみで API に結線されていない）。バックエンド側
+  （`POST /api/v1/auth/login`、セッション発行、KV ロックアウト）は**実装済み**
+  （`apps/admin/src/pages/api/v1/auth/`、`src/lib/server/auth/`）。案件側の残作業は
+  ①フォームから API への結線 ②ログイン後の遷移先＝管理画面ランディングの設計 の 2 点で、
+  どちらも 00_DEV_GUIDE §3-3 のステップ 3（管理画面 UI の 1 枚目）に含める。`/` 自体がログイン画面であり `/login` への分離は行わないため、ログイン成功後は明示的に別ルート
   （例: `/dashboard`）へ遷移させること（`/` への遷移は無条件にログイン画面へ戻るためループする）。
   `apps/admin` はサブドメイン（例: admin.example.com）で丸ごと管理画面としてデプロイするため、
   遷移先の URL に `/admin` のような接頭辞は付けない（§1 参照）。
