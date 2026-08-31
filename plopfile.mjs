@@ -100,7 +100,13 @@ export default function (plop) {
 
       const actions = [];
       for (const app of apps) {
-        for (const screen of parseScreenTable(markdown, app.idPrefix)) {
+        const screens = parseScreenTable(markdown, app.idPrefix);
+        // A project that rewrote PRD-04's screen table without the ルート column would otherwise
+        // get a silent no-op here. Fail loudly instead — the route map is the whole point.
+        if (screens.length === 0) {
+          throw new Error(`No ${app.idPrefix}-* rows with a ルート column found in ${SCREENS_DOC}. Add the route to PRD-04 §3-${app.section} first (see the scaffold skill).`);
+        }
+        for (const screen of screens) {
           if (!data.includeOptional && isOptional(screen.screenName)) continue;
           const file = routeToFile(screen.route);
           // Layout.astro always sits at src/layouts/, so the relative depth follows the route depth.

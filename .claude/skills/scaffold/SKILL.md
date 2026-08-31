@@ -79,8 +79,9 @@ pnpm generate resource -- --name=<name> --table=<table> --externalKeyField=<fiel
 
 All seven flags are required in this order-independent `--flag=value` form — Plop's CLI bypass
 mechanism cannot skip conditional prompts, so `statusField`/`transitions` must always be passed
-(empty string when there's no state machine). Do not run `npx plop resource` interactively from
-an agent context; always use the bypass form above.
+(empty string when there's no state machine). Do not run `pnpm generate resource` without the flags
+from an agent context — it drops into interactive prompts and hangs; always use the bypass form
+above.
 
 This generates (paths use `<table>` for the URL segment, `<name>` for file/function names, all
 rooted at `apps/admin/`):
