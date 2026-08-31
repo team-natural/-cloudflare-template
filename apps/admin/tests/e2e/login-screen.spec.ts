@@ -31,7 +31,10 @@ test.describe("admin login screen", () => {
 
   test("submitting an empty form is blocked by the browser and stays on the page", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "ログイン" }).click();
+    // Enabled == the island has hydrated (login-form.svelte gates the button on onMount).
+    const submit = page.getByRole("button", { name: "ログイン" });
+    await expect(submit).toBeEnabled();
+    await submit.click();
 
     // `required` keeps the submit from firing; the assertion is that nothing navigated.
     // Client-side validation is a convenience only — the server validates independently

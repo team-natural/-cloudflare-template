@@ -26,9 +26,12 @@ styling/icon rules under `.agents/skills/shadcn-svelte/rules/`. While implementi
   inventing a new layout — currently the login screen (ADM-00): `apps/admin/src/pages/index.astro`
   + `apps/admin/src/lib/components/login-form.svelte`. What it establishes: `Card.Root` >
   `Card.Header`/`Card.Content`/`Card.Footer` composition, `Label` + `Input` pairs inside a
-  `grid gap-2`, and Svelte 5 runes (`$state`) for local form state. It is a deliberately minimal
-  scaffold — UI only, not wired to any API — so treat it as a composition reference, not as a
-  finished screen. As more admin screens land, treat the most recent screen of the same kind
+  `grid gap-2`, and Svelte 5 runes (`$state`) for local form state. It is wired to
+  `POST /api/v1/auth/login`, so it also establishes this project's client-side form conventions:
+  inline per-field errors from the API's 422 envelope, a `role="alert"` form-level message for
+  everything else, and a submit button disabled until `onMount` fires (an island's markup exists
+  before its JS, and a submit in that window is a native POST that loses the input). Follow those
+  three, but treat the *layout* as a minimal scaffold rather than a finished screen. As more admin screens land, treat the most recent screen of the same kind
   (dashboard/list/form/settings) as the reference instead — this skill doesn't hard-code
   per-type layouts, because none are established yet.
 - Wrap the page in `apps/admin/src/layouts/Layout.astro` (which imports

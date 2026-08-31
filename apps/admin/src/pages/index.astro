@@ -7,6 +7,6 @@ import LoginForm from "../lib/components/login-form.svelte";
   <main class="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
     <img src="/logo.svg" alt="ロゴ" width="211" height="55" />
     <LoginForm client:load />
-    <p class="max-w-sm text-center text-sm text-muted-foreground">簡易的な画面（ADM-00、UI のみで API 未結線）。詳細は docs/2-product/04-ui-ux-design.md §3-2、docs/3-development/06-frontend-guide.md §4-4 を参照。</p>
+    <p class="max-w-sm text-center text-sm text-muted-foreground">ADM-00。POST /api/v1/auth/login に結線済みで、成功すると /dashboard へ遷移する。見た目は骨組みのみ — docs/2-product/04-ui-ux-design.md §3-2、docs/3-development/06-frontend-guide.md §4-4 を参照。</p>
   </main>
 </Layout>
