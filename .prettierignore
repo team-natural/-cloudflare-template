@@ -7,7 +7,6 @@
 .wrangler/
 *.md
 dist/
-docs/
 migrations/
 node_modules/
 plop-templates/
