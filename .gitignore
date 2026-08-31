@@ -34,6 +34,9 @@ worker-configuration.d.ts
 .env
 .env.*
 !.devcontainer/.env
+# Secrets themselves stay ignored; the *.example templates that list their keys must be committed.
+!.env.example
+!*.dev.vars.example
 
 # --- Claude Code ---
 settings.local.json

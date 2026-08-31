@@ -76,7 +76,14 @@ async function main() {
   const now = new Date().toISOString();
   const sql = `INSERT INTO admin_users (public_id, name, email, password_hash, role, status, created_at, updated_at) ` + `VALUES (${sqlQuote(ulid())}, ${sqlQuote(name)}, ${sqlQuote(email)}, ${sqlQuote(passwordHash)}, ${sqlQuote(role)}, 'active', ${sqlQuote(now)}, ${sqlQuote(now)});`;
 
-  const db = args.db ?? "replace-with-db-name";
+  // No default: the template's wrangler.jsonc still carries `replace-with-db-name`, so
+  // defaulting to it would run `wrangler d1 execute` against a database that does not exist
+  // and fail with a confusing wrangler error instead of a clear one here.
+  const db = typeof args.db === "string" && args.db !== "" && !args.db.startsWith("replace-with-") ? args.db : null;
+  if (!db) {
+    console.error("--db=<database_name> is required. Use the database_name from apps/admin/wrangler.jsonc (replace the replace-with-* placeholder first).");
+    process.exit(1);
+  }
   const wranglerArgs = ["wrangler", "d1", "execute", db, args.remote ? "--remote" : "--local", "--command", sql];
   if (args.env) wranglerArgs.splice(4, 0, "--env", args.env);
 

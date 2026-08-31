@@ -262,12 +262,12 @@ Vector DB の選定正本は **DEV-01 §2**：**第一候補は Cloudflare Vecto
 <!-- SAMPLE START: 参考値の例 — 実際のモデル・最新価格に置き換えてください -->
 | プロバイダ / モデル（例、2026-08 時点） | 単価（参考） | 1 ジョブあたり推定コスト |
 | --- | --- | --- |
-| Claude Sonnet 5 | $3 / 1M input tokens, $15 / 1M output tokens | $0.003〜0.015 |
+| Claude Sonnet 5 | $2 / 1M input tokens, $10 / 1M output tokens | $0.002〜0.010 |
 | GPT-5.6 Terra | $2 / 1M input, $12 / 1M output | $0.002〜0.012 |
 | Gemini 3.1 Pro | $2 / 1M input, $12 / 1M output（200K トークンまで） | $0.002〜0.012 |
 <!-- SAMPLE END -->
 
-> 価格は本書執筆時点の参考値。最新情報を各プロバイダで確認すること。
+> 価格は本書執筆時点の参考値。**転記した値は必ず陳腐化する**ので、見積・原価計算に使う前に各プロバイダの公式価格ページで再確認すること（Anthropic は Models API / 公式 pricing ページ）。
 
 ---
 

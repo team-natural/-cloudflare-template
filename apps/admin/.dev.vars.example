@@ -1,0 +1,35 @@
+# Local secrets for `astro dev` / `wrangler dev` — copy to `.dev.vars` and fill in.
+# `.dev.vars` is gitignored; this .example file is the committed list of keys (DEV-08 §8).
+#
+# In staging/production these are Workers Secrets, NOT `vars`:
+#   pnpm --filter admin exec wrangler secret put SESSION_SIGNING_KEY --env production
+# Non-secret configuration (SESSION_TTL_DAYS, AUTH_LOCKOUT_*) lives in wrangler.jsonc `vars`
+# instead — and must be repeated in every env block, because `vars` is not inheritable.
+
+# --- Required ---
+# HMAC signing key for session ids and invite / password-reset tokens (Web Crypto — DEV-02 §1-1).
+# Generate with: openssl rand -base64 32
+SESSION_SIGNING_KEY=
+
+APP_NAME=
+APP_URL=
+APP_ENV=development
+
+# --- Mail (Resend — DEV-01 §1, DEV-10 §2). Required once inquiry notifications land (F-06-01/03).
+RESEND_API_KEY=
+MAIL_FROM_ADDRESS=
+MAIL_FROM_NAME=
+
+# --- Adoption-gated: uncomment only if the project adopts the feature ---
+# Lightweight EC (FG-05 — DEV-10 §3)
+# STRIPE_KEY=
+# STRIPE_SECRET=
+# STRIPE_WEBHOOK_SECRET=
+
+# Error tracking (DEV-08 §9)
+# SENTRY_DSN=
+
+# AI features (PRD-05, DEV-01 §2). Model ids/prices: check the provider's official docs.
+# ANTHROPIC_API_KEY=
+# OPENAI_API_KEY=
+# GEMINI_API_KEY=
