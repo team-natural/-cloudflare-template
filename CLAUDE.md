@@ -150,6 +150,12 @@ not shared, and is part of the `@astrojs/cloudflare` setup rather than a project
   never from `apps/public`, even though it shares the same database.
 - Never hand-write migration SQL and never edit anything under `packages/schema/migrations/`; it is
   `drizzle-kit generate` output (use the `schema-build` skill).
+- **The template ships no `migrations/` directory at all** — it is a derived artifact, like `dist/`
+  or `worker-configuration.d.ts`. A project's first `pnpm db:generate` creates it, producing a clean
+  `0000_*.sql` for whatever tables that project actually has. Shipping a pre-generated migration
+  would leave a snapshot in `meta/` that every project has to diff against, so their first
+  `db:generate` would emit `ALTER`/`DROP` against the template's tables instead of a real baseline.
+  Once generated, `migrations/` **is** committed by the project — do not add it to `.gitignore`.
 
 ## shadcn-svelte
 

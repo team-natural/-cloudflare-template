@@ -73,6 +73,11 @@ pnpm run db:generate
 
 This runs `drizzle-kit generate` from `packages/schema`, diffing `schema.ts` against
 `migrations/meta/` snapshots and writing new SQL to `packages/schema/migrations/NNNN_<name>.sql`.
+
+On a fresh project there is no `migrations/` directory yet — the template deliberately ships none
+(CLAUDE.md, "D1 / R2 / KV binding rules"). drizzle-kit creates it, and because there is no prior
+snapshot to diff against, that first run emits a clean `0000_*.sql` containing exactly the project's
+tables. Commit the result; from then on every run is an incremental diff.
 No live D1 connection is needed for this step. Read the generated SQL — confirm it's additive
 (new `CREATE TABLE`/`CREATE INDEX`/forward-only `ALTER`) and matches DEV-07's forward-only
 migration policy (DEV-07 §9). If it wants to drop or rebuild a column in a way `ALTER TABLE`

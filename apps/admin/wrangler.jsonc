@@ -14,11 +14,16 @@
 
   // Shared with apps/public — copy the same database_id / bucket_name that were
   // generated when creating them from apps/public/wrangler.jsonc (DEV-08 §1).
+  //
+  // D1 migrations live in packages/schema/migrations and are applied from this app only
+  // (DEV-01 §1, DEV-07 §12). `migrations_dir` must be repeated in every env block —
+  // wrangler does not inherit it from the top level.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "replace-with-db-name",
       "database_id": "replace-with-database-id",
+      "migrations_dir": "../../packages/schema/migrations",
     },
   ],
   "r2_buckets": [
@@ -41,6 +46,7 @@
           "binding": "DB",
           "database_name": "replace-with-db-name-staging",
           "database_id": "replace-with-database-id-staging",
+          "migrations_dir": "../../packages/schema/migrations",
         },
       ],
       "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "replace-with-bucket-name-staging" }],
@@ -52,6 +58,7 @@
           "binding": "DB",
           "database_name": "replace-with-db-name-production",
           "database_id": "replace-with-database-id-production",
+          "migrations_dir": "../../packages/schema/migrations",
         },
       ],
       "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "replace-with-bucket-name-production" }],
