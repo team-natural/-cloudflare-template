@@ -26,14 +26,17 @@ export default tseslint.config(
   },
   // Each app has its own svelte.config.js; passing it to the parser is what makes
   // preprocessor-aware rules (svelte/valid-compile etc.) accurate.
+  // `*.svelte.ts` / `*.svelte.js` (runes outside a component — shadcn-svelte's sidebar ships one)
+  // are matched by eslint-plugin-svelte too, and need the TS parser just as much: without them
+  // here, `pnpm lint` fails on the first such file with "Parsing error: Unexpected token".
   {
-    files: ["apps/admin/**/*.svelte"],
+    files: ["apps/admin/**/*.svelte", "apps/admin/**/*.svelte.{ts,js}"],
     languageOptions: {
       parserOptions: { parser: tseslint.parser, svelteConfig: adminSvelteConfig },
     },
   },
   {
-    files: ["apps/public/**/*.svelte"],
+    files: ["apps/public/**/*.svelte", "apps/public/**/*.svelte.{ts,js}"],
     languageOptions: {
       parserOptions: { parser: tseslint.parser, svelteConfig: publicSvelteConfig },
     },

@@ -81,9 +81,10 @@ Prefer the framework-specific server over `context7` when one covers the questio
 - `astro-docs` / `svelte` / `cloudflare-docs` — official docs for this stack's three core pieces.
   These are the first stop for Astro, Svelte and Workers/D1/R2/KV questions respectively.
 - `context7` — remote HTTP server for up-to-date docs on any *other* library/framework.
-- `playwright` — headless Chromium, used by the `design-review` skill. Screenshots default into
-  the gitignored `.playwright-mcp/`; don't pass an absolute `filename`, or the file lands
-  untracked in the repo root.
+- `playwright` — headless Chromium, used by the `design-review` skill. **Take screenshots without
+  passing `filename`**: only then do they land in the gitignored `.playwright-mcp/` (set as
+  `outputDir` in `.playwright.config.json`). Any explicit `filename` — relative as much as
+  absolute — is written relative to the cwd instead, dropping untracked PNGs in the repo root.
 - `context-mode` — local context-compression server, installed globally (in-container) by
   `setup.sh` and invoked directly by command name.
 - `semble` — local code search server, run via `uvx` (needs the `uv` install in the Dockerfile).
@@ -195,7 +196,16 @@ Admin-only — `apps/public` gets plain Tailwind and no component library.
   `pnpm dlx shadcn-svelte@latest add <component>`.
 - The CLI emits tab-indented files, so **run `pnpm format` after every `add`/`update`** or the next
   `pnpm check` fails on formatting.
-- Generated components under `apps/admin/src/lib/components/ui/` are yours to edit.
+- **`add` prompts, and `--yes` does not silence it.** Whenever the component you asked for depends
+  on one already installed (most do — `label`, `input`, `button`), the CLI asks whether to
+  overwrite and blocks; from an agent that just hangs until it is killed. The only non-interactive
+  escape is `--overwrite`, which really does replace those existing files with the current registry
+  versions. So: **commit first, run `add --yes --overwrite`, then `git diff` the `ui/` directory**
+  and restore any intentional edits it reverted.
+- Generated components under `apps/admin/src/lib/components/ui/` are yours to edit — which is
+  exactly why the diff above matters.
+- Some components (e.g. `sidebar`) ship `*.svelte.ts` modules. `eslint.config.js` gives those the
+  TS parser alongside `*.svelte`; without that pairing `pnpm lint` dies on "Unexpected token".
 - `.agents/skills/shadcn-svelte/` is vendor-managed — never hand-edit it. `.claude/skills/shadcn-svelte`
   is a symlink to it, which is what makes Claude Code load it as a skill.
 

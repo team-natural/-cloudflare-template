@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import * as Card from "$lib/components/ui/card/index.js";
+  import * as Field from "$lib/components/ui/field/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
-  import { Label } from "$lib/components/ui/label/index.js";
 
   // `/` is the login screen itself (DEV-06 §4-4), so success must land elsewhere or it loops.
   // A constant, not a `?next=` parameter — that would be an open redirect.
@@ -71,29 +71,29 @@
   </Card.Header>
   <Card.Content>
     <form onsubmit={handleSubmit}>
-      <div class="flex flex-col gap-6">
+      <Field.FieldGroup>
         {#if formError}
           <p role="alert" class="rounded-md border border-destructive/50 px-3 py-2 text-sm text-destructive">
             {formError}
           </p>
         {/if}
 
-        <div class="grid gap-2">
-          <Label for="email">メールアドレス</Label>
+        <Field.Field data-invalid={fieldErrors.email ? true : undefined}>
+          <Field.FieldLabel for="email">メールアドレス</Field.FieldLabel>
           <Input id="email" name="email" type="email" autocomplete="username" placeholder="admin@example.com" bind:value={email} required aria-invalid={fieldErrors.email ? "true" : undefined} aria-describedby={fieldErrors.email ? "email-error" : undefined} />
           {#if fieldErrors.email}
-            <p id="email-error" class="text-sm text-destructive">{fieldErrors.email.join(" ")}</p>
+            <Field.FieldError id="email-error">{fieldErrors.email.join(" ")}</Field.FieldError>
           {/if}
-        </div>
+        </Field.Field>
 
-        <div class="grid gap-2">
-          <Label for="password">パスワード</Label>
+        <Field.Field data-invalid={fieldErrors.password ? true : undefined}>
+          <Field.FieldLabel for="password">パスワード</Field.FieldLabel>
           <Input id="password" name="password" type="password" autocomplete="current-password" bind:value={password} required aria-invalid={fieldErrors.password ? "true" : undefined} aria-describedby={fieldErrors.password ? "password-error" : undefined} />
           {#if fieldErrors.password}
-            <p id="password-error" class="text-sm text-destructive">{fieldErrors.password.join(" ")}</p>
+            <Field.FieldError id="password-error">{fieldErrors.password.join(" ")}</Field.FieldError>
           {/if}
-        </div>
-      </div>
+        </Field.Field>
+      </Field.FieldGroup>
 
       <Card.Footer class="flex-col gap-2 px-0 pt-6">
         <Button type="submit" class="w-full" disabled={!hydrated || submitting}>

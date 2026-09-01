@@ -154,8 +154,11 @@ PRD-04 §4 の標準構成に対応する。管理画面は shadcn-svelte のプ
   戻ってループする）。案件側の残作業は**見た目**のみで、00_DEV_GUIDE §3-3 のステップ 3
   （管理画面 UI の 1 枚目）で扱う。
 - 上記が確立したフォーム規約は次の 3 点。新規フォームはこれに倣う:
-  1. 項目ごとのエラーは API の 422 エンベロープ（`errors`）をそのままインライン表示し、
-     `aria-invalid` / `aria-describedby` で入力欄に紐付ける。
+  1. フォームは `Field.FieldGroup` > `Field.Field` > `Field.FieldLabel` + コントロール
+     で組む（`grid gap-*` の生 `div` は使わない — `.agents/skills/shadcn-svelte/rules/forms.md`）。
+     項目ごとのエラーは API の 422 エンベロープ（`errors`）をそのまま `Field.FieldError` に出し、
+     `Field.Field` に `data-invalid`、コントロールに `aria-invalid` を付ける（両方必要。前者が
+     ラベル・説明文、後者がコントロール自体のスタイルを切り替える）。
   2. それ以外（401 / 429 / 5xx）はフォーム全体のメッセージを `role="alert"` で出す。サーバーが
      意図的に伏せている情報（アドレスの存在有無 — DEV-02 §7）をクライアント側で補わない。
   3. 送信ボタンは `onMount` まで `disabled` にする。アイランドは JS 実行前から DOM に存在するため、

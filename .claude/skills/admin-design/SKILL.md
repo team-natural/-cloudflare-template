@@ -25,8 +25,10 @@ styling/icon rules under `.agents/skills/shadcn-svelte/rules/`. While implementi
 - Look at the most similar existing admin screen for established composition style before
   inventing a new layout — currently the login screen (ADM-00): `apps/admin/src/pages/index.astro`
   + `apps/admin/src/lib/components/login-form.svelte`. What it establishes: `Card.Root` >
-  `Card.Header`/`Card.Content`/`Card.Footer` composition, `Label` + `Input` pairs inside a
-  `grid gap-2`, and Svelte 5 runes (`$state`) for local form state. It is wired to
+  `Card.Header`/`Card.Content`/`Card.Footer` composition, `Field.FieldGroup` > `Field.Field` >
+  `Field.FieldLabel` + control + `Field.FieldError` for form layout (never a bare `div` with
+  `grid gap-*` — the vendored rule in `.agents/skills/shadcn-svelte/rules/forms.md`), and
+  Svelte 5 runes (`$state`) for local form state. It is wired to
   `POST /api/v1/auth/login`, so it also establishes this project's client-side form conventions:
   inline per-field errors from the API's 422 envelope, a `role="alert"` form-level message for
   everything else, and a submit button disabled until `onMount` fires (an island's markup exists

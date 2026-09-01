@@ -47,7 +47,8 @@ Because the screen list is never retyped into a flag, the route map cannot drift
 add the screen to the doc, re-run, done. **Add the ルート column entry to PRD-04 first** if a screen
 is missing one; the generator ignores rows without a route.
 
-What it emits is deliberately just route + layout + `<h1>` + a TODO pointing at the screen ID:
+What it emits is deliberately just route + layout + `<h1>` + a comment naming the screen ID and
+the design skill that owns the page:
 **every layout and composition decision belongs to the design skills**, and pre-baking more here
 would only get rewritten.
 
